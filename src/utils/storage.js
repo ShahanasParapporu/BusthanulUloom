@@ -8,8 +8,13 @@ export const STORAGE_KEYS = {
   ONBOARDING_COMPLETED: '@onboarding_completed',
 };
 
+// ─── Keys that belong to admin content — must NEVER be cleared on logout ─────
+const ADMIN_DATA_KEYS = [
+  'admin_college_stats',
+  'admin_teachers',
+];
+
 export const storageService = {
-  // Save data
   async setItem(key, value) {
     try {
       const jsonValue = JSON.stringify(value);
@@ -21,7 +26,6 @@ export const storageService = {
     }
   },
 
-  // Get data
   async getItem(key) {
     try {
       const jsonValue = await AsyncStorage.getItem(key);
@@ -32,7 +36,6 @@ export const storageService = {
     }
   },
 
-  // Remove data
   async removeItem(key) {
     try {
       await AsyncStorage.removeItem(key);
@@ -43,7 +46,19 @@ export const storageService = {
     }
   },
 
-  // Clear all data
+  // ✅ Clears ONLY auth keys — admin content (stats, teachers) is preserved
+  async clearAuthOnly() {
+    try {
+      const authKeys = Object.values(STORAGE_KEYS);
+      await AsyncStorage.multiRemove(authKeys);
+      return true;
+    } catch (error) {
+      console.error('Error clearing auth data:', error);
+      return false;
+    }
+  },
+
+  // Full clear — only use this if you want to wipe everything (e.g. factory reset)
   async clear() {
     try {
       await AsyncStorage.clear();

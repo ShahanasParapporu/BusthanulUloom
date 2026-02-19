@@ -1,6 +1,6 @@
 // // src/screens/home/HomeScreen.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,8 +15,18 @@ import {
 import { Card, Avatar, IconButton, Badge, List, Button } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { storageService } from '../../utils/storage';
 
 const { width } = Dimensions.get('window');
+
+const ADMIN_STATS_KEY = 'admin_college_stats';
+
+const DEFAULT_STATS = {
+  established: '1995',
+  affiliation: 'Calicut',
+  students: '1200+',
+  location: 'Malappuram, Kerala',
+};
 
 // 1. DATA CONFIGURATION (Move this to a separate constants file later)
 //In your DASHBOARD_FEATURES array inside HomeScreen.js, ensure the screen names match exactly what you named them in the Stack
@@ -89,6 +99,18 @@ const COLLEGE_STATS = {
 const HomeScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.auth);
   const [aboutExpanded, setAboutExpanded] = useState(false);
+  const [collegeStats, setCollegeStats] = useState(DEFAULT_STATS);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      const saved = await storageService.getItem(ADMIN_STATS_KEY);
+      if (saved) setCollegeStats(saved);
+    };
+    loadStats();
+    // Also re-fetch when screen gains focus
+    const unsubscribe = navigation.addListener('focus', loadStats);
+    return unsubscribe;
+  }, [navigation]);
 
   const handleLogoutPress = () => {
     Alert.alert(
@@ -175,9 +197,9 @@ const HomeScreen = ({ navigation }) => {
           >
             <View style={styles.aboutContent}>
               <View style={styles.statsGrid}>
-                <StatItem label="Est." value="1995" />
-                <StatItem label="Affiliated" value="Calicut" />
-                <StatItem label="Students" value="1200+" />
+              <StatItem label="Est." value={collegeStats.established} />
+                <StatItem label="Affiliated" value={collegeStats.affiliation} />
+                <StatItem label="Students" value={collegeStats.students} />
               </View>
               <Text style={styles.locationText}>
                 <Icon name="map-marker" color="#666" /> Malappuram, Kerala

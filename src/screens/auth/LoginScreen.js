@@ -12,7 +12,10 @@ import {
   StatusBar,
 } from 'react-native';
 import { TextInput, Button, Snackbar } from 'react-native-paper';
-import { COLORS } from '../../constants/theme';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../../redux/slices/authSlice';
+import { storageService, STORAGE_KEYS } from '../../utils/storage';
+import { COLORS, USER_ROLES} from '../../constants/theme';
 
 // Ensuring consistency with the modern color palette
 const THEME = {
@@ -23,7 +26,16 @@ const THEME = {
   white: '#FFFFFF',
 };
 
-const LoginScreen = ({ navigation }) => {
+const ROLE_LABELS = {
+  [USER_ROLES.STUDENT]: { label: 'Student', icon: '🎓', color: '#2E7D32' },
+  [USER_ROLES.PARENT]: { label: 'Parent', icon: '👨‍👩‍👧', color: '#1565C0' },
+};
+
+const LoginScreen = ({ navigation, route }) => {
+  const dispatch = useDispatch();
+  const role = route?.params?.role || USER_ROLES.STUDENT;
+  const roleInfo = ROLE_LABELS[role] || ROLE_LABELS[USER_ROLES.STUDENT];
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,10 +51,16 @@ const LoginScreen = ({ navigation }) => {
     }
     setLoading(true);
     // Logic remains the same...
-    setTimeout(() => {
-      setLoading(false);
-      navigation.replace('RoleSelection');
-    }, 1500);
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const userData = { name: email.split('@')[0] || 'User', email };
+    await storageService.setItem(STORAGE_KEYS.USER_DATA, userData);
+    await storageService.setItem(STORAGE_KEYS.AUTH_TOKEN, 'mock-token');
+    await storageService.setItem(STORAGE_KEYS.USER_ROLE, role);
+
+    dispatch(loginSuccess({ user: userData, role, token: 'mock-token' }));
+    setLoading(false);
+    navigation.replace('Main');
   };
 
   return (
@@ -51,17 +69,25 @@ const LoginScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle="dark-content" />
-      
-      {/* Soft background decorative element */}
       <View style={styles.headerAccent} />
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Back to role selection */}
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.backBtnText}>← Change Role</Text>
+        </TouchableOpacity>
+
+        {/* Role badge */}
+        <View style={[styles.roleBadge, { backgroundColor: roleInfo.color + '18' }]}>
+          <Text style={styles.roleEmoji}>{roleInfo.icon}</Text>
+          <Text style={[styles.roleLabel, { color: roleInfo.color }]}>
+            Signing in as {roleInfo.label}
+          </Text>
+        </View>
+
         <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to access your account</Text>
+          <Text style={styles.subtitle}>Sign in to access your {roleInfo.label.toLowerCase()} account</Text>
         </View>
 
         <View style={styles.form}>
@@ -73,6 +99,8 @@ const LoginScreen = ({ navigation }) => {
             underlineColor="transparent"
             activeUnderlineColor={THEME.primary}
             style={styles.input}
+            autoCapitalize="none"
+            keyboardType="email-address"
             left={<TextInput.Icon icon="email-outline" color={THEME.primary} />}
           />
 
@@ -95,10 +123,7 @@ const LoginScreen = ({ navigation }) => {
             }
           />
 
-          <TouchableOpacity 
-            style={styles.forgotPasswordContainer}
-            onPress={() => {/* Forgot Password logic */}}
-          >
+          <TouchableOpacity style={styles.forgotPasswordContainer}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -119,19 +144,6 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.registerLink}> Create Account</Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity 
-            style={styles.guestButton}
-            onPress={() => navigation.replace('RoleSelection')}
-          >
-            <Text style={styles.guestButtonText}>Continue as Guest</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -148,120 +160,49 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: THEME.white,
-  },
+  container: { flex: 1, backgroundColor: THEME.white },
   headerAccent: {
-    position: 'absolute',
-    top: -50,
-    left: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: '#E8F5E9', // Light green wash
-    opacity: 0.6,
+    position: 'absolute', top: -50, left: -50,
+    width: 200, height: 200, borderRadius: 100,
+    backgroundColor: '#E8F5E9', opacity: 0.6,
   },
-  scrollContent: {
-    paddingHorizontal: 28,
-    paddingBottom: 40,
+  scrollContent: { paddingHorizontal: 28, paddingBottom: 40 },
+  backBtn: { marginTop: 60, alignSelf: 'flex-start' },
+  backBtnText: { color: THEME.textSecondary, fontSize: 15, fontWeight: '500' },
+  roleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 16,
+    gap: 8,
   },
-  header: {
-    marginTop: 100,
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: THEME.textMain,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: THEME.textSecondary,
-    marginTop: 8,
-  },
-  form: {
-    flex: 1,
-  },
+  roleEmoji: { fontSize: 18 },
+  roleLabel: { fontSize: 14, fontWeight: '700' },
+  header: { marginTop: 20, marginBottom: 36 },
+  title: { fontSize: 34, fontWeight: '800', color: THEME.textMain, letterSpacing: -0.5 },
+  subtitle: { fontSize: 16, color: THEME.textSecondary, marginTop: 8 },
+  form: { flex: 1 },
   input: {
-    marginBottom: 16,
-    backgroundColor: THEME.surface,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    borderRadius: 16,
-    height: 62,
+    marginBottom: 16, backgroundColor: THEME.surface,
+    borderTopLeftRadius: 16, borderTopRightRadius: 16,
+    borderRadius: 16, height: 62,
   },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    color: THEME.primary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 24 },
+  forgotPasswordText: { color: THEME.primary, fontWeight: '600', fontSize: 14 },
   loginButton: {
-    borderRadius: 16,
-    backgroundColor: THEME.primary,
-    elevation: 4,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    borderRadius: 16, backgroundColor: THEME.primary, elevation: 4,
+    shadowColor: THEME.primary, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 5,
   },
-  buttonContent: {
-    height: 56,
-  },
-  loginButtonLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textTransform: 'none',
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  noAccountText: {
-    color: THEME.textSecondary,
-    fontSize: 15,
-  },
-  registerLink: {
-    color: THEME.primary,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 30,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#EEEEEE',
-  },
-  dividerText: {
-    marginHorizontal: 15,
-    color: '#BDBDBD',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  guestButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  guestButtonText: {
-    color: THEME.textSecondary,
-    fontSize: 15,
-    fontWeight: '500',
-    textDecorationLine: 'underline',
-  },
-  snackbar: {
-    backgroundColor: '#333',
-    borderRadius: 10,
-  },
+  buttonContent: { height: 56 },
+  loginButtonLabel: { fontSize: 18, fontWeight: 'bold', textTransform: 'none' },
+  registerContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  noAccountText: { color: THEME.textSecondary, fontSize: 15 },
+  registerLink: { color: THEME.primary, fontWeight: '700', fontSize: 15 },
+  snackbar: { backgroundColor: '#333', borderRadius: 10 },
 });
 
 export default LoginScreen;

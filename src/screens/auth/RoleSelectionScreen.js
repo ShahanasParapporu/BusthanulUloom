@@ -1,6 +1,4 @@
 // src/screens/auth/RoleSelectionScreen.js
-
-
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { Button, Card, Avatar } from 'react-native-paper';
@@ -27,9 +25,16 @@ const roles = [
   {
     id: USER_ROLES.PARENT,
     title: 'Parent',
-    description: 'Track your child\'s growth',
+    description: "Track your child's growth",
     icon: 'family-tree',
     color: '#1565C0',
+  },
+  {
+    id: USER_ROLES.ADMIN,
+    title: 'Admin',
+    description: 'Manage institution settings',
+    icon: 'shield-account-outline',
+    color: '#6A1B9A',
   },
 ];
 
@@ -39,26 +44,30 @@ const RoleSelectionScreen = ({ navigation }) => {
 
   const handleContinue = async () => {
     if (!selectedRole) return;
-    
-    // Logic for saving and navigation remains the same
+
     await storageService.setItem(STORAGE_KEYS.USER_ROLE, selectedRole);
-    const userData = await storageService.getItem(STORAGE_KEYS.USER_DATA);
-    const token = await storageService.getItem(STORAGE_KEYS.AUTH_TOKEN);
 
-    dispatch(loginSuccess({
-      user: userData || { name: 'Guest User' },
-      role: selectedRole,
-      token: token || null,
-    }));
-
-    navigation.replace('Main');
+    if (selectedRole === USER_ROLES.GUEST) {
+      // Auto-login guest — no credentials needed
+      dispatch(
+        loginSuccess({
+          user: { name: 'Guest User' },
+          role: USER_ROLES.GUEST,
+          token: null,
+        })
+      );
+      navigation.replace('Main');
+    } else if (selectedRole === USER_ROLES.ADMIN) {
+      navigation.navigate('AdminLogin');
+    } else {
+      // Student / Parent → role-aware login screen
+      navigation.navigate('Login', { role: selectedRole });
+    }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      {/* Decorative background element */}
       <View style={styles.topAccent} />
 
       <View style={styles.header}>
@@ -78,14 +87,14 @@ const RoleSelectionScreen = ({ navigation }) => {
               <Card
                 style={[
                   styles.roleCard,
-                  isSelected && { ...styles.roleCardSelected, borderColor: role.color }
+                  isSelected && { ...styles.roleCardSelected, borderColor: role.color },
                 ]}
               >
                 <View style={styles.cardLayout}>
-                  <Avatar.Icon 
-                    size={50} 
-                    icon={role.icon} 
-                    backgroundColor={isSelected ? role.color : '#F5F5F5'} 
+                  <Avatar.Icon
+                    size={50}
+                    icon={role.icon}
+                    backgroundColor={isSelected ? role.color : '#F5F5F5'}
                     color={isSelected ? '#FFF' : role.color}
                   />
                   <View style={styles.textContainer}>
@@ -95,9 +104,9 @@ const RoleSelectionScreen = ({ navigation }) => {
                     <Text style={styles.roleDescription}>{role.description}</Text>
                   </View>
                   {isSelected && (
-                    <Avatar.Icon 
-                      size={24} 
-                      icon="check-circle" 
+                    <Avatar.Icon
+                      size={24}
+                      icon="check-circle"
                       style={styles.checkmark}
                       color={role.color}
                       backgroundColor="transparent"
@@ -115,13 +124,13 @@ const RoleSelectionScreen = ({ navigation }) => {
         onPress={handleContinue}
         disabled={!selectedRole}
         style={[
-          styles.continueButton, 
-          !selectedRole ? styles.disabledButton : { backgroundColor: COLORS.primary }
+          styles.continueButton,
+          !selectedRole ? styles.disabledButton : { backgroundColor: COLORS.primary },
         ]}
         contentStyle={styles.buttonContent}
         labelStyle={styles.continueButtonText}
       >
-        Get Started
+        Continue
       </Button>
     </View>
   );
@@ -145,7 +154,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 80,
-    marginBottom: 40,
+    marginBottom: 35,
   },
   title: {
     fontSize: 32,
@@ -163,7 +172,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   roleCard: {
-    marginBottom: 20,
+    marginBottom: 16,
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
     elevation: 0,
@@ -172,7 +181,7 @@ const styles = StyleSheet.create({
   },
   roleCardSelected: {
     borderWidth: 2,
-    backgroundColor: '#F9FFF9', // very slight green tint
+    backgroundColor: '#FAFAFA',
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -182,7 +191,7 @@ const styles = StyleSheet.create({
   cardLayout: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: 18,
   },
   textContainer: {
     flex: 1,
@@ -220,192 +229,3 @@ const styles = StyleSheet.create({
 });
 
 export default RoleSelectionScreen;
-
-// import React, { useState } from 'react';
-// import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-// import { Button, Card } from 'react-native-paper';
-// import { useDispatch } from 'react-redux';
-// import { loginSuccess, setRole } from '../../redux/slices/authSlice';
-// import { COLORS, USER_ROLES } from '../../constants/theme';
-// import { storageService, STORAGE_KEYS } from '../../utils/storage';
-
-// const roles = [
-//   {
-//     id: USER_ROLES.GUEST,
-//     title: 'Guest',
-//     description: 'Browse public content',
-//     icon: '👤',
-//     color: COLORS.gray,
-//   },
-//   {
-//     id: USER_ROLES.STUDENT,
-//     title: 'Student',
-//     description: 'Access student portal and courses',
-//     icon: '🎓',
-//     color: COLORS.primary,
-//   },
-//   {
-//     id: USER_ROLES.PARENT,
-//     title: 'Parent',
-//     description: 'Monitor child\'s progress',
-//     icon: '👨‍👩‍👧‍👦',
-//     color: COLORS.secondary,
-//   },
-// ];
-
-// const RoleSelectionScreen = ({ navigation }) => {
-//   const dispatch = useDispatch();
-//   const [selectedRole, setSelectedRole] = useState(null);
-
-//   const handleRoleSelect = (role) => {
-//     setSelectedRole(role);
-//   };
-
-//   const handleContinue = async () => {
-//     if (!selectedRole) return;
-
-//     // Save role to storage
-//     await storageService.setItem(STORAGE_KEYS.USER_ROLE, selectedRole);
-
-//     // Update Redux state
-//     const userData = await storageService.getItem(STORAGE_KEYS.USER_DATA);
-//     const token = await storageService.getItem(STORAGE_KEYS.AUTH_TOKEN);
-
-//     dispatch(
-//       loginSuccess({
-//         user: userData || { name: 'Guest User' },
-//         role: selectedRole,
-//         token: token || null,
-//       })
-//     );
-
-//     // Navigate to main app
-//     navigation.replace('Main');
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <View style={styles.header}>
-//         <Text style={styles.title}>Select Your Role</Text>
-//         <Text style={styles.subtitle}>Choose how you want to use the app</Text>
-//       </View>
-
-//       <View style={styles.rolesContainer}>
-//         {roles.map((role) => (
-//           <TouchableOpacity
-//             key={role.id}
-//             onPress={() => handleRoleSelect(role.id)}
-//             activeOpacity={0.7}
-//           >
-//             <Card
-//               style={[
-//                 styles.roleCard,
-//                 selectedRole === role.id && styles.roleCardSelected,
-//               ]}
-//             >
-//               <Card.Content style={styles.roleContent}>
-//                 <Text style={styles.roleIcon}>{role.icon}</Text>
-//                 <Text style={styles.roleTitle}>{role.title}</Text>
-//                 <Text style={styles.roleDescription}>{role.description}</Text>
-//                 {selectedRole === role.id && (
-//                   <View style={styles.checkmark}>
-//                     <Text style={styles.checkmarkText}>✓</Text>
-//                   </View>
-//                 )}
-//               </Card.Content>
-//             </Card>
-//           </TouchableOpacity>
-//         ))}
-//       </View>
-
-//       <Button
-//         mode="contained"
-//         onPress={handleContinue}
-//         disabled={!selectedRole}
-//         style={styles.continueButton}
-//         labelStyle={styles.continueButtonText}
-//       >
-//         Continue
-//       </Button>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: COLORS.white,
-//     padding: 20,
-//   },
-//   header: {
-//     marginTop: 40,
-//     marginBottom: 30,
-//   },
-//   title: {
-//     fontSize: 28,
-//     fontWeight: 'bold',
-//     color: COLORS.primary,
-//     marginBottom: 10,
-//   },
-//   subtitle: {
-//     fontSize: 16,
-//     color: COLORS.gray,
-//   },
-//   rolesContainer: {
-//     flex: 1,
-//   },
-//   roleCard: {
-//     marginBottom: 15,
-//     elevation: 2,
-//   },
-//   roleCardSelected: {
-//     borderWidth: 2,
-//     borderColor: COLORS.primary,
-//     elevation: 4,
-//   },
-//   roleContent: {
-//     alignItems: 'center',
-//     paddingVertical: 20,
-//     position: 'relative',
-//   },
-//   roleIcon: {
-//     fontSize: 50,
-//     marginBottom: 10,
-//   },
-//   roleTitle: {
-//     fontSize: 20,
-//     fontWeight: 'bold',
-//     color: COLORS.primary,
-//     marginBottom: 5,
-//   },
-//   roleDescription: {
-//     fontSize: 14,
-//     color: COLORS.gray,
-//     textAlign: 'center',
-//   },
-//   checkmark: {
-//     position: 'absolute',
-//     top: 10,
-//     right: 10,
-//     backgroundColor: COLORS.primary,
-//     borderRadius: 15,
-//     width: 30,
-//     height: 30,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   checkmarkText: {
-//     color: COLORS.white,
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//   },
-//   continueButton: {
-//     paddingVertical: 8,
-//     marginTop: 20,
-//   },
-//   continueButtonText: {
-//     fontSize: 16,
-//   },
-// });
-
-// export default RoleSelectionScreen;
