@@ -1,112 +1,72 @@
 // src/navigation/MainNavigator.js
-import React from 'react';
+//
+// CRITICAL: Role is captured via useRef at mount time and NEVER re-read from
+// Redux. This prevents React Navigation from crashing when dispatch(logout())
+// changes `role` to GUEST while the tab navigator is still mounted.
+//
+// The RootNavigator unmounts MainNavigator when isAuthenticated becomes false,
+// so there is no need for MainNavigator to react to role changes at all.
+
+import React, { useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSelector, useDispatch } from 'react-redux';
-import { CommonActions } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Button } from 'react-native-paper';
+
+import HomeStackScreen     from './home/HomeStackScreen';
 import StudentPortalScreen from '../screens/student/StudentPortalScreen';
-import ParentPortalScreen from '../screens/parent/ParentPortalScreen';
-import AdminPanelScreen from '../screens/admin/AdminPanelScreen';
+import ParentPortalScreen  from '../screens/parent/ParentPortalScreen';
+import AdminPanelScreen    from '../screens/admin/AdminPanelScreen';
 import { COLORS, USER_ROLES } from '../constants/theme';
-import { logout } from '../redux/slices/authSlice';
-import { storageService } from '../utils/storage';
-import HomeStackScreen from './home/HomeStackScreen';
 
 const Tab = createBottomTabNavigator();
 
-const MainNavigator = ({ navigation }) => {
-  const { role } = useSelector((state) => state.auth);
-  const dispatch = useDispatch();
+const ICONS = {
+  Home:          { focused: 'home',           blur: 'home-outline'           },
+  StudentPortal: { focused: 'school',         blur: 'school-outline'         },
+  ParentPortal:  { focused: 'account-group',  blur: 'account-group-outline'  },
+  AdminPanel:    { focused: 'shield-account', blur: 'shield-account-outline' },
+};
 
-  const performLogout = async () => {
-    await storageService.clearAuthOnly();
-    dispatch(logout());
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'Auth',
-            state: {
-              index: 0,
-              routes: [{ name: 'RoleSelection' }],
-            },
-          },
-        ],
-      })
-    );
-  };
+const MainNavigator = () => {
+  // Read role from Redux ONCE at mount and freeze it.
+  // useRef ensures re-renders (from logout dispatch) never alter the tab structure.
+  const { role: currentRole } = useSelector((state) => state.auth);
+  const frozenRole = useRef(currentRole).current;
 
-  const handleLogout = () => {
-    performLogout();
-  };
-
-  const isAdmin = role === USER_ROLES.ADMIN;
+  const isAdmin   = frozenRole === USER_ROLES.ADMIN;
+  const isStudent = frozenRole === USER_ROLES.STUDENT;
+  const isParent  = frozenRole === USER_ROLES.PARENT;
+  const accentColor = isAdmin ? '#6A1B9A' : COLORS.primary;
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
-          const icons = {
-            Home: focused ? 'home' : 'home-outline',
-            StudentPortal: focused ? 'school' : 'school-outline',
-            ParentPortal: focused ? 'account-group' : 'account-group-outline',
-            AdminPanel: focused ? 'shield-account' : 'shield-account-outline',
-          };
-          return <Icon name={icons[route.name] || 'circle'} size={size} color={color} />;
+          const icon = ICONS[route.name];
+          return (
+            <Icon
+              name={icon ? (focused ? icon.focused : icon.blur) : 'circle'}
+              size={size}
+              color={color}
+            />
+          );
         },
-        tabBarActiveTintColor: isAdmin ? '#6A1B9A' : COLORS.primary,
+        tabBarActiveTintColor:   accentColor,
         tabBarInactiveTintColor: COLORS.gray,
-        headerStyle: { backgroundColor: isAdmin ? '#6A1B9A' : COLORS.primary },
-        headerTintColor: COLORS.white,
-        headerRight: () => (
-          <Button
-            icon="logout"
-            textColor={COLORS.white}
-            onPress={handleLogout}
-            style={{ marginRight: 10 }}
-          >
-            Logout
-          </Button>
-        ),
       })}
     >
-      {/* Home shown for Guest, Student, Parent — not Admin */}
       {!isAdmin && (
-        <Tab.Screen
-          name="Home"
-          component={HomeStackScreen}
-          options={{ tabBarLabel: 'Home', headerShown: false }}
-        />
+        <Tab.Screen name="Home" component={HomeStackScreen} options={{ tabBarLabel: 'Home' }} />
       )}
-
-      {(role === USER_ROLES.STUDENT || isAdmin) && (
-        <Tab.Screen
-          name="StudentPortal"
-          component={StudentPortalScreen}
-          options={{ tabBarLabel: 'Students', title: 'Student Portal' }}
-        />
+      {isStudent && (
+        <Tab.Screen name="StudentPortal" component={StudentPortalScreen} options={{ tabBarLabel: 'Portal' }} />
       )}
-
-      {(role === USER_ROLES.PARENT || isAdmin) && (
-        <Tab.Screen
-          name="ParentPortal"
-          component={ParentPortalScreen}
-          options={{ tabBarLabel: 'Parents', title: 'Parent Portal' }}
-        />
+      {isParent && (
+        <Tab.Screen name="ParentPortal" component={ParentPortalScreen} options={{ tabBarLabel: 'Portal' }} />
       )}
-
       {isAdmin && (
-        <Tab.Screen
-          name="AdminPanel"
-          component={AdminPanelScreen}
-          options={{
-            tabBarLabel: 'Admin',
-            title: 'Admin Panel',
-            headerShown: false,
-          }}
-        />
+        <Tab.Screen name="AdminPanel" component={AdminPanelScreen} options={{ tabBarLabel: 'Admin' }} />
       )}
     </Tab.Navigator>
   );

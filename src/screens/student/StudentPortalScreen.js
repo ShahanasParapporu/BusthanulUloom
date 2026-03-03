@@ -1,48 +1,69 @@
+// src/screens/student/StudentPortalScreen.js
+// Uses AppHeader (same as HomeScreen) so the top bar is identical across tabs.
+// useLogout ensures correct nav-first, dispatch-after ordering.
 import React from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, StatusBar } from 'react-native';
-import { Card, ProgressBar, Avatar, IconButton } from 'react-native-paper';
+import {
+  View, ScrollView, StyleSheet, Text, TouchableOpacity, StatusBar,
+} from 'react-native';
+import { Card, ProgressBar, Avatar } from 'react-native-paper';
+import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { COLORS } from '../../constants/theme';
+import { COLORS, USER_ROLES } from '../../constants/theme';
+import AppHeader from '../../components/AppHeader';
+import useLogout from '../../hooks/useLogout';
+
+const courses = [
+  { id: 1, name: 'Quranic Studies',  progress: 0.75, nextClass: 'Tomorrow, 9:00 AM',  color: '#2E7D32' },
+  { id: 2, name: 'Arabic Language',  progress: 0.60, nextClass: 'Today, 2:00 PM',      color: '#1565C0' },
+];
+
+const QUICK_ACTIONS = [
+  { label: 'Library',   icon: 'library-shelves',       color: '#FF7043' },
+  { label: 'Schedule',  icon: 'calendar-clock',         color: '#42A5F5' },
+  { label: 'Grades',    icon: 'chart-box-outline',      color: '#66BB6A' },
+  { label: 'Messages',  icon: 'chat-processing-outline',color: '#AB47BC' },
+];
 
 const StudentPortalScreen = () => {
-  const courses = [
-    { id: 1, name: 'Quranic Studies', progress: 0.75, nextClass: 'Tomorrow, 9:00 AM', color: '#2E7D32' },
-    { id: 2, name: 'Arabic Language', progress: 0.6, nextClass: 'Today, 2:00 PM', color: '#1565C0' },
-  ];
+  const { user, role } = useSelector((state) => state.auth);
+  const performLogout = useLogout();
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-      
+
+      {/* Same AppHeader as HomeScreen — consistent top bar with logout */}
+      <AppHeader
+        role={role}
+        user={user}
+        onLogout={performLogout}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
-        {/* --- Immersive Header --- */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.welcomeText}>As-salamu alaykum,</Text>
-              <Text style={styles.studentName}>Ahmed Ali</Text>
-            </View>
-            <Avatar.Image size={50} source={{ uri: 'https://i.pravatar.cc/150' }} />
+        {/* Welcome strip */}
+        <View style={styles.welcomeStrip}>
+          <View>
+            <Text style={styles.welcomeText}>As-salamu alaykum,</Text>
+            <Text style={styles.studentName}>{user?.name || 'Student'}</Text>
           </View>
+          <Avatar.Image size={50} source={{ uri: 'https://i.pravatar.cc/150' }} />
         </View>
 
-        {/* --- Floating Stats Card --- */}
+        {/* Stats */}
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>92%</Text>
-            <Text style={styles.statLabel}>Attendance</Text>
-          </View>
-          <View style={[styles.statBox, { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#EEE' }]}>
-            <Text style={styles.statValue}>A-</Text>
-            <Text style={styles.statLabel}>Avg Grade</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>12/15</Text>
-            <Text style={styles.statLabel}>Tasks</Text>
-          </View>
+          {[
+            { val: '92%',  lbl: 'Attendance' },
+            { val: 'A-',   lbl: 'Avg Grade'  },
+            { val: '12/15',lbl: 'Tasks'       },
+          ].map((s, i) => (
+            <View key={i} style={[styles.statBox, i !== 0 && styles.statBorder]}>
+              <Text style={styles.statValue}>{s.val}</Text>
+              <Text style={styles.statLabel}>{s.lbl}</Text>
+            </View>
+          ))}
         </View>
 
-        {/* --- Courses Section --- */}
+        {/* Courses */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>My Courses</Text>
           {courses.map((course) => (
@@ -66,16 +87,11 @@ const StudentPortalScreen = () => {
           ))}
         </View>
 
-        {/* --- Modern Quick Actions --- */}
+        {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Access</Text>
           <View style={styles.actionsGrid}>
-            {[
-              { label: 'Library', icon: 'library-shelves', color: '#FF7043' },
-              { label: 'Schedule', icon: 'calendar-clock', color: '#42A5F5' },
-              { label: 'Grades', icon: 'chart-box-outline', color: '#66BB6A' },
-              { label: 'Messages', icon: 'chat-processing-outline', color: '#AB47BC' },
-            ].map((item, index) => (
+            {QUICK_ACTIONS.map((item, index) => (
               <TouchableOpacity key={index} style={styles.actionItem}>
                 <View style={[styles.actionIconCircle, { backgroundColor: item.color + '10' }]}>
                   <Icon name={item.icon} size={28} color={item.color} />
@@ -92,37 +108,24 @@ const StudentPortalScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
-  header: {
-    backgroundColor: COLORS.primary,
-    paddingTop: 60,
-    paddingBottom: 60,
-    paddingHorizontal: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+  welcomeStrip: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: COLORS.primary, paddingHorizontal: 25, paddingVertical: 20,
+    paddingBottom: 30,
   },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   welcomeText: { color: 'rgba(255,255,255,0.8)', fontSize: 14 },
-  studentName: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
-  
+  studentName: { color: '#FFF', fontSize: 22, fontWeight: 'bold' },
   statsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF',
-    marginHorizontal: 25,
-    marginTop: -35,
-    borderRadius: 20,
-    paddingVertical: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    flexDirection: 'row', backgroundColor: '#FFF',
+    marginHorizontal: 25, marginTop: -20, borderRadius: 20,
+    paddingVertical: 20, elevation: 4,
   },
   statBox: { flex: 1, alignItems: 'center' },
+  statBorder: { borderLeftWidth: 1, borderColor: '#EEE' },
   statValue: { fontSize: 18, fontWeight: 'bold', color: COLORS.primary },
   statLabel: { fontSize: 11, color: '#757575', marginTop: 2 },
-
-  section: { marginTop: 30, paddingHorizontal: 25 },
+  section: { marginTop: 28, paddingHorizontal: 25 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 15 },
-  
   courseCard: { marginBottom: 15, borderRadius: 15, backgroundColor: '#FFF', elevation: 2 },
   courseHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   iconBox: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
@@ -130,11 +133,16 @@ const styles = StyleSheet.create({
   nextClassText: { fontSize: 12, color: '#757575', marginTop: 2 },
   progressPercent: { fontSize: 14, fontWeight: 'bold' },
   progressBar: { height: 6, borderRadius: 3 },
-
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  actionItem: { width: '47%', backgroundColor: '#FFF', borderRadius: 15, padding: 20, alignItems: 'center', marginBottom: 15, elevation: 1 },
-  actionIconCircle: { width: 55, height: 55, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  actionLabel: { fontSize: 13, fontWeight: '600', color: '#333' }
+  actionItem: {
+    width: '47%', backgroundColor: '#FFF', borderRadius: 15,
+    padding: 20, alignItems: 'center', marginBottom: 15, elevation: 1,
+  },
+  actionIconCircle: {
+    width: 55, height: 55, borderRadius: 20,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
+  },
+  actionLabel: { fontSize: 13, fontWeight: '600', color: '#333' },
 });
 
 export default StudentPortalScreen;
