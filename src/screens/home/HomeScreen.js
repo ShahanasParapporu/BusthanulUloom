@@ -11,6 +11,8 @@ import { storageService } from '../../utils/storage';
 import { USER_ROLES } from '../../constants/theme';
 import AppHeader from '../../components/AppHeader';
 import useLogout from '../../hooks/useLogout';
+import { useLanguage } from '../../i18n/LanguageContext';
+
 
 // ─── Inline sub-screen imports ────────────────────────────────────────────────
 import TeachersListScreen from '../features/TeachersListScreen';
@@ -30,36 +32,37 @@ const DEFAULT_STATS = {
   students: '1200+', location: 'Malappuram, Kerala',
 };
 
-const SUB_SCREENS = {
-  TeachersList:  { component: TeachersListScreen,  title: 'Our Teachers' },
-  DarsDetails:   { component: DarsDetailsScreen,   title: 'Busthanul Uloom Dars' },
-  ExamSchedule:  { component: ExamScheduleScreen,  title: 'Examinations' },
-  BUSA:          { component: BUSAScreen,           title: 'BUSA' },
-  Holidays:      { component: HolidaysScreen,       title: 'Official Holidays' },
-  DayInDars:     { component: DayInDarsScreen,      title: 'A Day in Dars' },
-  Facilities:    { component: FacilitiesScreen,     title: 'Campus Facilities' },
-  Gallery:       { component: GalleryScreen,        title: 'Gallery' },
-  Notifications: { component: NotificationsScreen,  title: 'Notifications' },
-};
-
-const DASHBOARD_FEATURES = [
-  { id: 10, title: 'Bustanul Uloom Dars',  icon: 'book-open-page-variant',     color: '#2E7D32', screen: 'DarsDetails'   },
-  { id: 11, title: 'Exam Schedule',         icon: 'file-document-edit-outline', color: '#1565C0', screen: 'ExamSchedule'  },
-  { id: 12, title: 'BUSA (Association)',    icon: 'account-group',              color: '#E65100', screen: 'BUSA'          },
-  { id: 13, title: 'Official Holidays',     icon: 'calendar-star',              color: '#C62828', screen: 'Holidays'      },
-  { id: 14, title: 'A Day in Dars',         icon: 'clock-check-outline',        color: '#00838F', screen: 'DayInDars'     },
-  { id: 15, title: 'Facilities',            icon: 'office-building',            color: '#4527A0', screen: 'Facilities'    },
-  { id: 16, title: 'Gallery & Videos',      icon: 'play-box-multiple-outline',  color: '#AD1457', screen: 'Gallery'       },
-  { id: 17, title: 'Notifications',         icon: 'bell-badge-outline',         color: '#5D4037', screen: 'Notifications' },
-];
-
 const HomeScreen = ({ navigation }) => {
   const { user, role } = useSelector((state) => state.auth);
   const performLogout = useLogout();
+  const { t } = useLanguage();
 
   const [activePage, setActivePage]       = useState(null);
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const [collegeStats, setCollegeStats]   = useState(DEFAULT_STATS);
+
+  const SUB_SCREENS = {
+    TeachersList:  { component: TeachersListScreen,  title: t('teachers.screenTitle') },
+    DarsDetails:   { component: DarsDetailsScreen,   title: t('dars.screenTitle') },
+    ExamSchedule:  { component: ExamScheduleScreen,  title: t('exams.screenTitle') },
+    BUSA:          { component: BUSAScreen,           title: t('busa.screenTitle')  },
+    Holidays:      { component: HolidaysScreen,       title: t('holidays.screenTitle') },
+    DayInDars:     { component: DayInDarsScreen,      title: t('dayInDars.screenTitle') },
+    Facilities:    { component: FacilitiesScreen,     title: t('facilities.screenTitle') },
+    Gallery:       { component: GalleryScreen,        title: t('gallery.screenTitle') },
+    Notifications: { component: NotificationsScreen,  title: t('notifications.screenTitle') },
+  };
+  
+  const DASHBOARD_FEATURES = [
+    { id: 10, title: t('home.features.dars'),          icon: 'book-open-page-variant',     color: '#2E7D32', screen: 'DarsDetails'   },
+    { id: 11, title: t('home.features.examSchedule'),  icon: 'file-document-edit-outline', color: '#1565C0', screen: 'ExamSchedule'  },
+    { id: 12, title: t('home.features.busa'),          icon: 'account-group',              color: '#E65100', screen: 'BUSA'          },
+    { id: 13, title: t('home.features.holidays'),      icon: 'calendar-star',              color: '#C62828', screen: 'Holidays'      },
+    { id: 14, title: t('home.features.dayInDars'),     icon: 'clock-check-outline',        color: '#00838F', screen: 'DayInDars'     },
+    { id: 15, title: t('home.features.facilities'),    icon: 'office-building',            color: '#4527A0', screen: 'Facilities'    },
+    { id: 16, title: t('home.features.gallery'),       icon: 'play-box-multiple-outline',  color: '#AD1457', screen: 'Gallery'       },
+    { id: 17, title: t('home.features.notifications'), icon: 'bell-badge-outline',         color: '#5D4037', screen: 'Notifications' },
+  ];
 
   useEffect(() => {
     const load = async () => {
@@ -77,10 +80,14 @@ const HomeScreen = ({ navigation }) => {
   const handleLogout = () => {
     const isGuest = role === USER_ROLES.GUEST;
     if (isGuest) { performLogout(); return; }
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: performLogout },
-    ]);
+    Alert.alert(
+      t('home.logoutConfirmTitle'),
+      t('home.logoutConfirmMsg'),
+      [
+        { text: t('app.cancel'), style: 'cancel' },
+        { text: t('app.logout'), style: 'destructive', onPress: performLogout },
+      ]
+    );
   };
 
   // Shared header props used on BOTH home feed and sub-pages
@@ -117,15 +124,15 @@ const HomeScreen = ({ navigation }) => {
           imageStyle={{ borderRadius: 20 }}
         >
           <View style={styles.bannerOverlay}>
-            <Text style={styles.bannerGreeting}>As-salamu alaykum,</Text>
-            <Text style={styles.bannerName}>{user?.name || 'Guest User'}</Text>
+          <Text style={styles.bannerGreeting}>{t('home.greeting')}</Text>
+          <Text style={styles.bannerName}>{role === USER_ROLES.GUEST ? t('home.guestUser') : user?.name}</Text>
           </View>
         </ImageBackground>
 
         {/* About Section */}
         <Card style={styles.aboutCard}>
           <List.Accordion
-            title="About the Institution"
+            title={t('home.aboutTitle')}
             left={(p) => <List.Icon {...p} icon="information-outline" color="#2E7D32" />}
             expanded={aboutExpanded}
             onPress={() => setAboutExpanded(!aboutExpanded)}
@@ -133,13 +140,13 @@ const HomeScreen = ({ navigation }) => {
           >
             <View style={styles.aboutContent}>
               <View style={styles.statsGrid}>
-                <StatItem label="Est." value={collegeStats.established} />
-                <StatItem label="Affiliated" value={collegeStats.affiliation} />
-                <StatItem label="Students" value={collegeStats.students} />
+                <StatItem label={t('home.statLabels.est')}        value={collegeStats.established} />
+                <StatItem label={t('home.statLabels.affiliated')} value={collegeStats.affiliation} />
+                <StatItem label={t('home.statLabels.students')}   value={collegeStats.students} />
               </View>
               <Text style={styles.locationText}>📍 {collegeStats.location}</Text>
               <Button mode="contained" style={styles.teachersBtn} onPress={() => openPage('TeachersList')}>
-                View Our Teachers
+              {t('home.viewTeachers')}
               </Button>
             </View>
           </List.Accordion>
@@ -147,7 +154,7 @@ const HomeScreen = ({ navigation }) => {
 
         {/* Feature Grid */}
         <View style={styles.gridContainer}>
-          <Text style={styles.sectionTitle}>Campus Services</Text>
+          <Text style={styles.sectionTitle}>{t('home.campusServices')}</Text>
           <View style={styles.grid}>
             {DASHBOARD_FEATURES.map((item) => (
               <TouchableOpacity key={item.id} style={styles.gridItem} onPress={() => openPage(item.screen)}>

@@ -7,6 +7,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Avatar, IconButton, Badge } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { USER_ROLES } from '../constants/theme';
+import LanguageToggle from './LanguageToggle';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const ROLE_COLOR = {
   [USER_ROLES.GUEST]:   '#2E7D32',
@@ -17,6 +19,7 @@ const ROLE_COLOR = {
 
 /**
  * Props:
+ * 
  *  role          – current USER_ROLES value
  *  user          – { name, email } from auth state
  *  onLogout      – called when logout icon pressed (only shown for non-guest)
@@ -38,6 +41,7 @@ const AppHeader = ({
 }) => {
   const isGuest = role === USER_ROLES.GUEST;
   const bgColor = ROLE_COLOR[role] || '#2E7D32';
+  const { t } = useLanguage();
 
   return (
     <View style={[styles.header, { backgroundColor: bgColor }]}>
@@ -54,8 +58,8 @@ const AppHeader = ({
             style={styles.logo}
           />
           <View>
-            <Text style={styles.collegeName}>Busthanul Uloom</Text>
-            <Text style={styles.collegeSub}>Arabic College</Text>
+            <Text style={styles.collegeName}>{t('header.collegeName')}</Text>
+            <Text style={styles.collegeSub}>{t('header.collegeSub')}</Text>
           </View>
         </View>
       )}
@@ -67,7 +71,31 @@ const AppHeader = ({
         </Text>
       ) : null}
 
-      {/* Right: bell + logout */}
+            {/* Right: language toggle + bell + logout */}
+            <View style={styles.actions}>
+
+{/* Language toggle — always visible */}
+<LanguageToggle dark />
+
+{/* Bell notification */}
+{onNotification ? (
+  <View>
+    <IconButton
+      icon="bell-outline"
+      iconColor="#FFF"
+      size={22}
+      onPress={onNotification}
+      style={styles.iconBtn}
+    />
+    {notifCount > 0 && (
+      <Badge style={styles.badge} size={15}>
+        {notifCount}
+      </Badge>
+    )}
+  </View>
+) : null}
+
+      {/* Right: bell + logout
       <View style={styles.actions}>
         {onNotification ? (
           <View>
@@ -84,7 +112,7 @@ const AppHeader = ({
               </Badge>
             )}
           </View>
-        ) : null}
+        ) : null} */}
 
         {/* Only show logout for authenticated users */}
         {!isGuest && onLogout ? (

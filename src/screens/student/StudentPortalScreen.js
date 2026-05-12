@@ -1,6 +1,3 @@
-// src/screens/student/StudentPortalScreen.js
-// Uses AppHeader (same as HomeScreen) so the top bar is identical across tabs.
-// useLogout ensures correct nav-first, dispatch-after ordering.
 import React from 'react';
 import {
   View, ScrollView, StyleSheet, Text, TouchableOpacity, StatusBar,
@@ -8,25 +5,41 @@ import {
 import { Card, ProgressBar, Avatar } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import { COLORS, USER_ROLES } from '../../constants/theme';
 import AppHeader from '../../components/AppHeader';
 import useLogout from '../../hooks/useLogout';
+import { useLanguage } from '../../i18n/LanguageContext';
+
+// const courses = [
+//   { id: 1, name: 'Quranic Studies',  progress: 0.75, nextClass: 'Tomorrow, 9:00 AM',  color: '#2E7D32' },
+//   { id: 2, name: 'Arabic Language',  progress: 0.60, nextClass: 'Today, 2:00 PM',      color: '#1565C0' },
+// ];
 
 const courses = [
-  { id: 1, name: 'Quranic Studies',  progress: 0.75, nextClass: 'Tomorrow, 9:00 AM',  color: '#2E7D32' },
-  { id: 2, name: 'Arabic Language',  progress: 0.60, nextClass: 'Today, 2:00 PM',      color: '#1565C0' },
+  { id: 1, name: 'Quranic Studies', progress: 0.75, nextClass: 'Tomorrow, 9:00 AM', color: '#2E7D32' },
+  { id: 2, name: 'Arabic Language', progress: 0.60, nextClass: 'Today, 2:00 PM',    color: '#1565C0' },
 ];
 
+
+// const QUICK_ACTIONS = [
+//   { label: 'Library',   icon: 'library-shelves',       color: '#FF7043' },
+//   { label: 'Schedule',  icon: 'calendar-clock',         color: '#42A5F5' },
+//   { label: 'Grades',    icon: 'chart-box-outline',      color: '#66BB6A' },
+//   { label: 'Messages',  icon: 'chat-processing-outline',color: '#AB47BC' },
+// ];
+
 const QUICK_ACTIONS = [
-  { label: 'Library',   icon: 'library-shelves',       color: '#FF7043' },
-  { label: 'Schedule',  icon: 'calendar-clock',         color: '#42A5F5' },
-  { label: 'Grades',    icon: 'chart-box-outline',      color: '#66BB6A' },
-  { label: 'Messages',  icon: 'chat-processing-outline',color: '#AB47BC' },
+  { labelKey: 'studentPortal.quickActions.library',  icon: 'library-shelves',        color: '#FF7043' },
+  { labelKey: 'studentPortal.quickActions.schedule', icon: 'calendar-clock',          color: '#42A5F5' },
+  { labelKey: 'studentPortal.quickActions.grades',   icon: 'chart-box-outline',       color: '#66BB6A' },
+  { labelKey: 'studentPortal.quickActions.messages', icon: 'chat-processing-outline', color: '#AB47BC' },
 ];
 
 const StudentPortalScreen = () => {
   const { user, role } = useSelector((state) => state.auth);
   const performLogout = useLogout();
+  const { t } = useLanguage();
 
   return (
     <View style={styles.container}>
@@ -43,7 +56,7 @@ const StudentPortalScreen = () => {
         {/* Welcome strip */}
         <View style={styles.welcomeStrip}>
           <View>
-            <Text style={styles.welcomeText}>As-salamu alaykum,</Text>
+            <Text style={styles.welcomeText}>t('studentPortal.greeting'),</Text>
             <Text style={styles.studentName}>{user?.name || 'Student'}</Text>
           </View>
           <Avatar.Image size={50} source={{ uri: 'https://i.pravatar.cc/150' }} />
@@ -52,9 +65,9 @@ const StudentPortalScreen = () => {
         {/* Stats */}
         <View style={styles.statsRow}>
           {[
-            { val: '92%',  lbl: 'Attendance' },
-            { val: 'A-',   lbl: 'Avg Grade'  },
-            { val: '12/15',lbl: 'Tasks'       },
+            { val: '92%',  lbl: t('studentPortal.stats.attendance') },
+            { val: 'A-',   lbl: t('studentPortal.stats.avgGrade')  },
+            { val: '12/15',lbl: t('studentPortal.stats.tasks')},
           ].map((s, i) => (
             <View key={i} style={[styles.statBox, i !== 0 && styles.statBorder]}>
               <Text style={styles.statValue}>{s.val}</Text>
@@ -65,7 +78,7 @@ const StudentPortalScreen = () => {
 
         {/* Courses */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Courses</Text>
+          <Text style={styles.sectionTitle}>{t('studentPortal.myCourses')}</Text>
           {courses.map((course) => (
             <Card key={course.id} style={styles.courseCard}>
               <Card.Content>
@@ -89,7 +102,7 @@ const StudentPortalScreen = () => {
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Access</Text>
+          <Text style={styles.sectionTitle}>{t('studentPortal.quickAccess')}</Text>
           <View style={styles.actionsGrid}>
             {QUICK_ACTIONS.map((item, index) => (
               <TouchableOpacity key={index} style={styles.actionItem}>

@@ -12,6 +12,8 @@ import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import { storageService, STORAGE_KEYS } from '../../utils/storage';
 import { USER_ROLES } from '../../constants/theme';
+import { useLanguage } from '../../i18n/LanguageContext';
+import LanguageToggle from '../../components/LanguageToggle'
 
 const THEME = {
   primary: '#2E7D32',
@@ -27,6 +29,7 @@ const ROLE_LABELS = {
 };
 
 const LoginScreen = ({ navigation, route }) => {
+  const { t } = useLanguage();
   const dispatch = useDispatch();
   const role     = route?.params?.role || USER_ROLES.STUDENT;
   const roleInfo = ROLE_LABELS[role] || ROLE_LABELS[USER_ROLES.STUDENT];
@@ -40,7 +43,7 @@ const LoginScreen = ({ navigation, route }) => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setSnackbarMessage('Please enter your credentials');
+      setSnackbarMessage('login.fillCredentials');
       setSnackbarVisible(true);
       return;
     }
@@ -67,26 +70,47 @@ const LoginScreen = ({ navigation, route }) => {
       <View style={styles.headerAccent} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        {/* <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>← Change Role</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
-        <View style={[styles.roleBadge, { backgroundColor: roleInfo.color + '18' }]}>
+<View style={styles.topRow}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.backBtnText}>{t('login.changeRole')}</Text>
+          </TouchableOpacity>
+          <LanguageToggle />
+        </View>
+
+        {/* <View style={[styles.roleBadge, { backgroundColor: roleInfo.color + '18' }]}>
           <Text style={styles.roleEmoji}>{roleInfo.icon}</Text>
           <Text style={[styles.roleLabel, { color: roleInfo.color }]}>
             Signing in as {roleInfo.label}
           </Text>
+        </View> */}
+
+<View style={[styles.roleBadge, { backgroundColor: roleInfo.color + '18' }]}>
+          <Text style={styles.roleEmoji}>{roleInfo.icon}</Text>
+          <Text style={[styles.roleLabel, { color: roleInfo.color }]}>
+            {t('login.signingAs').replace('{role}', t(`roleSelection.roles.${role}.title`))}
+          </Text>
         </View>
 
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>
             Sign in to access your {roleInfo.label.toLowerCase()} account
           </Text>
+        </View> */}
+
+<View style={styles.header}>
+          <Text style={styles.title}>{t('login.title')}</Text>
+          <Text style={styles.subtitle}>
+            {t('login.subtitle').replace('{role}', t(`roleSelection.roles.${role}.title`).toLowerCase())}
+          </Text>
         </View>
 
         <TextInput
-          label="Email Address"
+          label={t('login.email')}//"Email Address"
           value={email}
           onChangeText={setEmail}
           mode="flat"
@@ -99,7 +123,7 @@ const LoginScreen = ({ navigation, route }) => {
         />
 
         <TextInput
-          label="Password"
+          label={t('login.password')}//"Password"
           value={password}
           onChangeText={setPassword}
           mode="flat"
@@ -118,7 +142,7 @@ const LoginScreen = ({ navigation, route }) => {
         />
 
         <TouchableOpacity style={styles.forgotPasswordContainer}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
         </TouchableOpacity>
 
         <Button
@@ -129,13 +153,13 @@ const LoginScreen = ({ navigation, route }) => {
           contentStyle={styles.buttonContent}
           labelStyle={styles.loginButtonLabel}
         >
-          Login
+          {t('login.loginBtn')}
         </Button>
 
         <View style={styles.registerContainer}>
-          <Text style={styles.noAccountText}>Don't have an account?</Text>
+          <Text style={styles.noAccountText}>{t('login.noAccount')}</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.registerLink}> Create Account</Text>
+            <Text style={styles.registerLink}>{t('login.createAccount')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

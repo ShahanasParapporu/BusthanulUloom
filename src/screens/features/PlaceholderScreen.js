@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../../constants/theme';
+import { useLanguage } from '../../i18n/LanguageContext';
+
 
 const PlaceholderScreen = ({ route }) => (
   <View style={styles.container}>
-    <Text style={styles.text}>Welcome to the</Text>
-    <Text style={styles.screenName}>{route?.name || 'Feature'}</Text>
-    <Text style={styles.text}>Screen</Text>
-    <Text style={styles.subtitle}>Development in Progress</Text>
+    <Text style={styles.text}>{t('placeholder.welcomeTo')}</Text>
+    <Text style={styles.screenName}>{route?.name || t('placeholder.screen')}</Text>
+    <Text style={styles.text}>{t('placeholder.screen')}</Text>
+    <Text style={styles.subtitle}>{t('placeholder.wip')}</Text>
   </View>
 );
 

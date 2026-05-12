@@ -9,17 +9,27 @@ import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import { COLORS, USER_ROLES } from '../../constants/theme';
 import { storageService, STORAGE_KEYS } from '../../utils/storage';
+import { useLanguage } from '../../i18n/LanguageContext';
+
+
+// const roles = [
+//   { id: USER_ROLES.GUEST,   title: 'Guest',   description: 'Explore public courses & info',     icon: 'account-eye-outline',    color: '#757575' },
+//   { id: USER_ROLES.STUDENT, title: 'Student', description: 'Access your portal & lessons',      icon: 'school-outline',         color: '#2E7D32' },
+//   { id: USER_ROLES.PARENT,  title: 'Parent',  description: "Track your child's growth",         icon: 'family-tree',            color: '#1565C0' },
+//   { id: USER_ROLES.ADMIN,   title: 'Admin',   description: 'Manage institution settings',       icon: 'shield-account-outline', color: '#6A1B9A' },
+// ];
 
 const roles = [
-  { id: USER_ROLES.GUEST,   title: 'Guest',   description: 'Explore public courses & info',     icon: 'account-eye-outline',    color: '#757575' },
-  { id: USER_ROLES.STUDENT, title: 'Student', description: 'Access your portal & lessons',      icon: 'school-outline',         color: '#2E7D32' },
-  { id: USER_ROLES.PARENT,  title: 'Parent',  description: "Track your child's growth",         icon: 'family-tree',            color: '#1565C0' },
-  { id: USER_ROLES.ADMIN,   title: 'Admin',   description: 'Manage institution settings',       icon: 'shield-account-outline', color: '#6A1B9A' },
+  { id: USER_ROLES.GUEST,   icon: 'account-eye-outline',    color: '#757575' },
+  { id: USER_ROLES.STUDENT, icon: 'school-outline',         color: '#2E7D32' },
+  { id: USER_ROLES.PARENT,  icon: 'family-tree',            color: '#1565C0' },
+  { id: USER_ROLES.ADMIN,   icon: 'shield-account-outline', color: '#6A1B9A' },
 ];
 
 const RoleSelectionScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const [selectedRole, setSelectedRole] = useState(null);
+  const { t } = useLanguage();
 
   const handleContinue = async () => {
     if (!selectedRole) return;
@@ -42,8 +52,8 @@ const RoleSelectionScreen = ({ navigation }) => {
       <View style={styles.topAccent} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Who are you?</Text>
-        <Text style={styles.subtitle}>Select your profile to personalize your experience</Text>
+        <Text style={styles.title}>{t('roleSelection.title')}</Text>
+        <Text style={styles.subtitle}>{t('roleSelection.subtitle')}</Text>
       </View>
 
       <View style={styles.rolesContainer}>
@@ -60,8 +70,8 @@ const RoleSelectionScreen = ({ navigation }) => {
                     color={isSelected ? '#FFF' : role.color}
                   />
                   <View style={styles.textContainer}>
-                    <Text style={[styles.roleTitle, isSelected && { color: role.color }]}>{role.title}</Text>
-                    <Text style={styles.roleDescription}>{role.description}</Text>
+                    <Text style={[styles.roleTitle, isSelected && { color: role.color }]}>{t(`roleSelection.roles.${role.id}.title`)}</Text>
+                    <Text style={styles.roleDescription}>{t(`roleSelection.roles.${role.id}.description`)}</Text>
                   </View>
                   {isSelected && (
                     <Avatar.Icon size={24} icon="check-circle" style={styles.checkmark} color={role.color} backgroundColor="transparent" />
@@ -81,7 +91,7 @@ const RoleSelectionScreen = ({ navigation }) => {
         contentStyle={styles.buttonContent}
         labelStyle={styles.continueButtonText}
       >
-        Continue
+        {t('roleSelection.continue')}
       </Button>
     </View>
   );

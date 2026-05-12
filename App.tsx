@@ -8,10 +8,13 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { store } from './src/redux/store';
 import { theme } from './src/constants/theme';
 import RootNavigator from './src/navigation/RootNavigator';
+import { LanguageProvider } from './src/i18n/LanguageContext'; // ← ADD
+
 
 const App = () => {
   return (
     <ReduxProvider store={store}>
+      <LanguageProvider>    
       <PaperProvider theme={theme}>
         <NavigationContainer>
           <StatusBar
@@ -21,6 +24,7 @@ const App = () => {
           <RootNavigator />
         </NavigationContainer>
       </PaperProvider>
+      </LanguageProvider>
     </ReduxProvider>
   );
 };
