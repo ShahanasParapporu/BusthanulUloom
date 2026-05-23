@@ -1,146 +1,219 @@
-import React, { useState } from 'react';
-import { View, FlatList, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { Text, List, Avatar, Divider, Chip, FAB } from 'react-native-paper';
+// src/screens/features/NotificationsScreen.js
+import React, { useState, useEffect } from 'react';
+import { View, FlatList, StyleSheet, TouchableOpacity, Linking, Text, Platform } from 'react-native';
+import { List, Avatar, Divider, Chip, FAB, Snackbar, ActivityIndicator  } from 'react-native-paper';
+import { storageService } from '../../utils/storage';
+import { CONTENT_KEYS, getDefaults } from '../../constants/contentKeys';
 import { COLORS } from '../../constants/theme';
+import { useLanguage } from '../../i18n/LanguageContext';
+import RNFS from 'react-native-fs';
+import Share from 'react-native-share';
 
-const NOTIFICATIONS = [
-  { id: '1', title: 'Eid Holidays', desc: 'The campus will remain closed from April 10 to 15.', category: 'Notice', time: '2h ago', icon: 'bullhorn-variant' },
-  { id: '2', title: 'Exam Hall Ticket', desc: 'Download your hall tickets for the Mid-Term exam.', category: 'Document', time: '1d ago', icon: 'file-pdf-box', isDoc: true },
-  { id: '3', title: 'BUSA Election Results', desc: 'New committee members have been announced.', category: 'Notice', time: '3d ago', icon: 'account-group' },
-  { id: '4', title: 'Fee Structure 2024', desc: 'Official fee structure for the upcoming academic year.', category: 'Document', time: '5d ago', icon: 'file-document', isDoc: true },
-];
+
+const buildNoticeHtml = (item) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>${item.title}</title>
+  <style>
+    body  { font-family: sans-serif; padding: 32px; color: #222; }
+    h1    { color: #1565C0; margin-bottom: 4px; }
+    .meta { color: #888; font-size: 13px; margin-bottom: 24px; }
+    .body { font-size: 16px; line-height: 1.7; background: #f9f9f9;
+            border-left: 4px solid #1565C0; padding: 16px 20px; border-radius: 4px; }
+    .footer { margin-top: 40px; color: #aaa; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>${item.title}</h1>
+  <div class="meta">
+    Category: ${item.category ?? '—'} &nbsp;|&nbsp; ${item.time ?? ''}
+  </div>
+  <div class="body">${item.desc ?? ''}</div>
+  <div class="footer">
+    Busthanul Uloom Arabic College &nbsp;·&nbsp;
+    Generated on ${new Date().toLocaleString()}
+  </div>
+</body>
+</html>
+`;
 
 const NotificationsScreen = () => {
-  const [filter, setFilter] = useState('All');
+  const { t, language } = useLanguage();
 
-  const filteredData = NOTIFICATIONS.filter(item => 
-    filter === 'All' ? true : item.category === filter
+  const [filter,        setFilter]        = useState('All');
+  const [notifications, setNotifications] = useState(getDefaults(language).NOTIFICATIONS ?? []);
+  const [downloading,   setDownloading]   = useState({});
+  const [snack,         setSnack]         = useState({ visible: false, message: '' });
+
+  const showSnack = (message) => setSnack({ visible: true, message });
+  const hideSnack = ()        => setSnack((s) => ({ ...s, visible: false }));
+
+  const load = () => {
+    storageService.getItem(CONTENT_KEYS.NOTIFICATIONS).then((saved) => {
+      if (saved) setNotifications(saved);
+      else       setNotifications(getDefaults(language).NOTIFICATIONS ?? []);
+    });
+  };
+
+  useEffect(() => { load(); }, [language]);
+
+  const filtered = notifications.filter(
+    (n) => filter === 'All' || n.category === filter
   );
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.itemContainer}
-      onPress={() => item.isDoc ? Linking.openURL('https://example.com/sample.pdf') : null}
-    >
-      <List.Item
-        title={item.title}
-        description={item.desc}
-        titleStyle={styles.itemTitle}
-        descriptionStyle={styles.itemDesc}
-        left={props => (
-          <Avatar.Icon 
-            {...props} 
-            icon={item.icon} 
-            size={44} 
-            backgroundColor={item.isDoc ? COLORS.primary + '15' : '#F0F0F0'} 
-            color={item.isDoc ? COLORS.primary : '#666'} 
-          />
-        )}
-        right={() => (
-          <View style={styles.rightContent}>
-            <Text style={styles.timeText}>{item.time}</Text>
-            {item.isDoc && <List.Icon icon="download" color={COLORS.primary} />}
-          </View>
-        )}
-      />
-      <Divider style={styles.divider} />
-    </TouchableOpacity>
-  );
+  const FILTER_LABELS = {
+    All:      t('notifications.all'),
+    Notice:   t('notifications.notice'),
+    Document: t('notifications.document'),
+  };
+
+  const handleDownload = async (item) => {
+    // If it has a real URL, just open it directly
+    if (item.url) {
+      Linking.openURL(item.url);
+      return;
+    }
+
+    setDownloading((prev) => ({ ...prev, [item.id]: true }));
+    try {
+      const filename = `notice-${item.title.replace(/\s+/g, '_')}-${Date.now()}.html`;
+      const dir  = Platform.OS === 'android'
+        ? RNFS.DownloadDirectoryPath
+        : RNFS.DocumentDirectoryPath;
+      const path = `${dir}/${filename}`;
+
+      showSnack('⏳ Preparing document…');
+
+      await RNFS.writeFile(path, buildNoticeHtml(item), 'utf8');
+
+      const exists = await RNFS.exists(path);
+      if (!exists) { showSnack('❌ Download failed. Please try again.'); return; }
+
+      if (Platform.OS === 'android') {
+        showSnack('✅ Saved! Opening…');
+        setTimeout(async () => {
+          try {
+            await Linking.openURL(`file://${path}`);
+          } catch {
+            showSnack(`✅ Saved to Downloads: ${filename}`);
+          }
+        }, 500);
+      } else {
+        await Share.open({
+          url:   path,
+          type:  'text/html',
+          title: 'Save or Share Document',
+        });
+        showSnack('✅ Ready — save or share from the sheet!');
+      }
+    } catch (err) {
+      if (err?.message !== 'User did not share') {
+        console.error('Download error:', err);
+        showSnack('❌ Download failed. Please try again.');
+      }
+    } finally {
+      setDownloading((prev) => ({ ...prev, [item.id]: false }));
+    }
+  };
 
   return (
     <View style={styles.container}>
       {/* Filter Chips */}
       <View style={styles.filterRow}>
         {['All', 'Notice', 'Document'].map((cat) => (
-          <Chip 
+          <Chip
             key={cat}
             selected={filter === cat}
             onPress={() => setFilter(cat)}
-            style={styles.chip}
-            selectedColor={COLORS.white}
-            background={filter === cat ? COLORS.primary : '#E0E0E0'}
+            style={[styles.chip, filter === cat && styles.selectedChip]}
+            textStyle={{ color: filter === cat ? COLORS.white : '#444' }}
           >
-            {cat}
+            {FILTER_LABELS[cat]}
           </Chip>
         ))}
       </View>
 
-      {/* List */}
       <FlatList
-        data={filteredData}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listPadding}
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            activeOpacity={item.isDoc ? 0.8 : 1}
+            onPress={() => item.isDoc ? handleDownload(item) : null}
+          >
+            <List.Item
+              title={item.title}
+              description={item.desc}
+              titleStyle={styles.itemTitle}
+              descriptionStyle={styles.itemDesc}
+              left={() => (
+                <Avatar.Icon
+                  icon={item.icon || 'bell-outline'}
+                  size={44}
+                  backgroundColor={item.isDoc ? COLORS.primary + '15' : '#F0F0F0'}
+                  color={item.isDoc ? COLORS.primary : '#666'}
+                />
+              )}
+              right={() => (
+                <View style={styles.right}>
+                  <Text style={styles.time}>{item.time}</Text>
+                  {item.isDoc ? (
+                    downloading[item.id]
+                      ? <ActivityIndicator size="small" color={COLORS.primary} style={{ marginTop: 4 }} />
+                      : (
+                        <TouchableOpacity onPress={() => handleDownload(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                          <List.Icon icon="download" color={COLORS.primary} />
+                        </TouchableOpacity>
+                      )
+                  ) : null}
+                </View>
+              )}
+            />
+            <Divider style={{ marginHorizontal: 70 }} />
+          </TouchableOpacity>
+        )}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No notifications found in this category.</Text>
-          </View>
+          <Text style={styles.empty}>
+            {t('notifications.noNotifications') || 'No notifications in this category.'}
+          </Text>
         }
       />
 
-      {/* Floating Refresh Button */}
       <FAB
         icon="refresh"
         style={styles.fab}
         color={COLORS.white}
-        onPress={() => console.log('Refreshing...')}
+        onPress={load}
       />
+
+      <Snackbar
+        visible={snack.visible}
+        onDismiss={hideSnack}
+        duration={3000}
+        action={{ label: '✕', onPress: hideSnack }}
+      >
+        {snack.message}
+      </Snackbar>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
-  filterRow: { flexDirection: 'row', padding: 15, backgroundColor: '#F8F9FA' },
-  chip: { marginRight: 10 },
-  listPadding: { paddingBottom: 100 },
-  itemContainer: { paddingVertical: 5 },
-  itemTitle: { fontWeight: 'bold', fontSize: 16, color: '#333' },
-  itemDesc: { fontSize: 13, color: '#666', marginTop: 4 },
-  divider: { marginHorizontal: 70 },
-  rightContent: { justifyContent: 'center', alignItems: 'flex-end' },
-  timeText: { fontSize: 11, color: '#AAA' },
-  emptyContainer: { marginTop: 100, alignItems: 'center' },
-  emptyText: { color: '#999' },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: COLORS.primary,
-  },
+  container:    { flex: 1, backgroundColor: '#FFF' },
+  filterRow:    { flexDirection: 'row', padding: 14, backgroundColor: '#F8F9FA', gap: 8 },
+  chip:         { backgroundColor: '#EEE' },
+  selectedChip: { backgroundColor: COLORS.primary },
+  list:         { paddingBottom: 100 },
+  itemTitle:    { fontWeight: 'bold', fontSize: 15, color: '#333' },
+  itemDesc:     { fontSize: 12, color: '#666', marginTop: 3 },
+  right:        { justifyContent: 'center', alignItems: 'flex-end' },
+  time:         { fontSize: 11, color: '#AAA' },
+  empty:        { textAlign: 'center', color: '#999', marginTop: 60 },
+  fab:          { position: 'absolute', margin: 16, right: 0, bottom: 0, backgroundColor: COLORS.primary },
 });
 
 export default NotificationsScreen;
-
-// import React from 'react';
-// import { FlatList } from 'react-native';
-// import { List, Avatar, Divider } from 'react-native-paper';
-// import { COLORS } from '../../constants/theme';
-
-// const NotificationsScreen = () => {
-//   const notifications = [
-//     { id: '1', title: 'New Circular', desc: 'Semester exam dates announced', icon: 'information', time: '2h ago' },
-//     { id: '2', title: 'Fee Reminder', desc: 'Last date for term fee is 30th Oct', icon: 'alert-circle', time: '1d ago' },
-//   ];
-
-//   return (
-//     <FlatList
-//       data={notifications}
-//       keyExtractor={item => item.id}
-//       renderItem={({ item }) => (
-//         <>
-//           <List.Item
-//             title={item.title}
-//             description={item.desc}
-//             left={p => <Avatar.Icon {...p} icon={item.icon} size={40} backgroundColor={COLORS.primary + '10'} color={COLORS.primary} />}
-//             right={() => <List.Subheader>{item.time}</List.Subheader>}
-//           />
-//           <Divider />
-//         </>
-//       )}
-//     />
-//   );
-// };
-
-// export default NotificationsScreen;

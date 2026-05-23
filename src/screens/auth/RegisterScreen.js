@@ -10,7 +10,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { TextInput, Button, Snackbar } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient'; // Optional: Use for background
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // Assuming COLORS.primary is your green #2E7D32
 const COLORS = {
@@ -23,6 +23,7 @@ const COLORS = {
 };
 
 const RegisterScreen = ({ navigation }) => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -42,7 +43,7 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleRegister = () => {
     if (!formData.fullName || !formData.email || !formData.password) {
-      setSnackbarMessage('Please fill in required fields');
+      setSnackbarMessage(t('register.fillRequired'));
       setSnackbarVisible(true);
       return;
     }
@@ -68,13 +69,18 @@ const RegisterScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join the <Text style={{color: COLORS.primary, fontWeight: 'bold'}}>Busthanul Uloom</Text> community</Text>
-        </View>
+          <Text style={styles.title}>t('register.title')</Text>
+          <Text style={styles.subtitle}>
+  {t('register.subtitle')}
+  <Text style={{color: COLORS.primary, fontWeight: 'bold'}}>
+    {t('register.subtitleBold')}
+  </Text>
+  {t('register.subtitleEnd')}
+</Text>        </View>
 
         <View style={styles.form}>
           <TextInput
-            label="Full Name"
+            label="t('register.fullName')"
             value={formData.fullName}
             onChangeText={(text) => updateFormData('fullName', text)}
             mode="flat"
@@ -85,7 +91,7 @@ const RegisterScreen = ({ navigation }) => {
           />
 
           <TextInput
-            label="Email Address"
+            label="t('register.email')"
             value={formData.email}
             onChangeText={(text) => updateFormData('email', text)}
             mode="flat"
@@ -98,7 +104,7 @@ const RegisterScreen = ({ navigation }) => {
           />
 
           <TextInput
-            label="Phone (Optional)"
+            label="t('register.phone')"
             value={formData.phone}
             onChangeText={(text) => updateFormData('phone', text)}
             mode="flat"
@@ -110,7 +116,7 @@ const RegisterScreen = ({ navigation }) => {
           />
 
           <TextInput
-            label="Password"
+            label="t('register.password')"
             value={formData.password}
             onChangeText={(text) => updateFormData('password', text)}
             mode="flat"
@@ -128,7 +134,7 @@ const RegisterScreen = ({ navigation }) => {
           />
 
           <TextInput
-            label="Confirm Password"
+            label="t('register.confirmPassword')"
             value={formData.confirmPassword}
             onChangeText={(text) => updateFormData('confirmPassword', text)}
             mode="flat"
@@ -153,13 +159,13 @@ const RegisterScreen = ({ navigation }) => {
             contentStyle={styles.buttonContent}
             labelStyle={styles.registerButtonText}
           >
-            Create Account
+            t('register.createBtn')
           </Button>
 
           <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account?</Text>
+            <Text style={styles.loginText}>t('register.haveAccount')</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}> Log In</Text>
+              <Text style={styles.loginLink}>t('register.logIn')</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -257,233 +263,3 @@ const styles = StyleSheet.create({
 });
 
 export default RegisterScreen;
-
-
-
-// // src/screens/auth/RegisterScreen.js
-// import React, { useState } from 'react';
-// import {
-//   View,
-//   StyleSheet,
-//   ScrollView,
-//   KeyboardAvoidingView,
-//   Platform,
-//   Text,
-// } from 'react-native';
-// import { TextInput, Button, Snackbar } from 'react-native-paper';
-// import { COLORS } from '../../constants/theme';
-
-// const RegisterScreen = ({ navigation }) => {
-//   const [formData, setFormData] = useState({
-//     fullName: '',
-//     email: '',
-//     phone: '',
-//     password: '',
-//     confirmPassword: '',
-//   });
-//   const [showPassword, setShowPassword] = useState(false);
-//   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-//   const [loading, setLoading] = useState(false);
-//   const [snackbarVisible, setSnackbarVisible] = useState(false);
-//   const [snackbarMessage, setSnackbarMessage] = useState('');
-
-//   const handleRegister = () => {
-//     if (
-//       !formData.fullName ||
-//       !formData.email ||
-//       !formData.password ||
-//       !formData.confirmPassword
-//     ) {
-//       showSnackbar('Please fill in all required fields');
-//       return;
-//     }
-
-//     if (formData.password !== formData.confirmPassword) {
-//       showSnackbar('Passwords do not match');
-//       return;
-//     }
-
-//     setLoading(true);
-
-//     // Simulate API call
-//     setTimeout(() => {
-//       setLoading(false);
-//       showSnackbar('Registration successful!');
-//       setTimeout(() => {
-//         navigation.navigate('Login');
-//       }, 1500);
-//     }, 1500);
-//   };
-
-//   const showSnackbar = (message) => {
-//     setSnackbarMessage(message);
-//     setSnackbarVisible(true);
-//   };
-
-//   const updateFormData = (field, value) => {
-//     setFormData({ ...formData, [field]: value });
-//   };
-
-//   return (
-//     <KeyboardAvoidingView
-//       style={styles.container}
-//       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-//     >
-//       <ScrollView contentContainerStyle={styles.scrollContent}>
-//         <View style={styles.header}>
-//           <Text style={styles.title}>Create Account</Text>
-//           <Text style={styles.subtitle}>Join Busthanul Uloom</Text>
-//         </View>
-
-//         <View style={styles.form}>
-//           <TextInput
-//             label="Full Name *"
-//             value={formData.fullName}
-//             onChangeText={(text) => updateFormData('fullName', text)}
-//             mode="outlined"
-//             style={styles.input}
-//             left={<TextInput.Icon icon="account" />}
-//           />
-
-//           <TextInput
-//             label="Email *"
-//             value={formData.email}
-//             onChangeText={(text) => updateFormData('email', text)}
-//             mode="outlined"
-//             keyboardType="email-address"
-//             autoCapitalize="none"
-//             style={styles.input}
-//             left={<TextInput.Icon icon="email" />}
-//           />
-
-//           <TextInput
-//             label="Phone Number"
-//             value={formData.phone}
-//             onChangeText={(text) => updateFormData('phone', text)}
-//             mode="outlined"
-//             keyboardType="phone-pad"
-//             style={styles.input}
-//             left={<TextInput.Icon icon="phone" />}
-//           />
-
-//           <TextInput
-//             label="Password *"
-//             value={formData.password}
-//             onChangeText={(text) => updateFormData('password', text)}
-//             mode="outlined"
-//             secureTextEntry={!showPassword}
-//             style={styles.input}
-//             left={<TextInput.Icon icon="lock" />}
-//             right={
-//               <TextInput.Icon
-//                 icon={showPassword ? 'eye-off' : 'eye'}
-//                 onPress={() => setShowPassword(!showPassword)}
-//               />
-//             }
-//           />
-
-//           <TextInput
-//             label="Confirm Password *"
-//             value={formData.confirmPassword}
-//             onChangeText={(text) => updateFormData('confirmPassword', text)}
-//             mode="outlined"
-//             secureTextEntry={!showConfirmPassword}
-//             style={styles.input}
-//             left={<TextInput.Icon icon="lock-check" />}
-//             right={
-//               <TextInput.Icon
-//                 icon={showConfirmPassword ? 'eye-off' : 'eye'}
-//                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-//               />
-//             }
-//           />
-
-//           <Button
-//             mode="contained"
-//             onPress={handleRegister}
-//             loading={loading}
-//             disabled={loading}
-//             style={styles.registerButton}
-//             labelStyle={styles.registerButtonText}
-//           >
-//             Register
-//           </Button>
-
-//           <View style={styles.loginContainer}>
-//             <Text style={styles.loginText}>Already have an account? </Text>
-//             <Button
-//               mode="text"
-//               onPress={() => navigation.navigate('Login')}
-//               labelStyle={styles.loginLink}
-//               compact
-//             >
-//               Login
-//             </Button>
-//           </View>
-//         </View>
-//       </ScrollView>
-
-//       <Snackbar
-//         visible={snackbarVisible}
-//         onDismiss={() => setSnackbarVisible(false)}
-//         duration={3000}
-//       >
-//         {snackbarMessage}
-//       </Snackbar>
-//     </KeyboardAvoidingView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: COLORS.white,
-//   },
-//   scrollContent: {
-//     flexGrow: 1,
-//     padding: 20,
-//   },
-//   header: {
-//     marginTop: 40,
-//     marginBottom: 30,
-//   },
-//   title: {
-//     fontSize: 32,
-//     fontWeight: 'bold',
-//     color: COLORS.primary,
-//     marginBottom: 10,
-//   },
-//   subtitle: {
-//     fontSize: 16,
-//     color: COLORS.gray,
-//   },
-//   form: {
-//     flex: 1,
-//   },
-//   input: {
-//     marginBottom: 15,
-//   },
-//   registerButton: {
-//     paddingVertical: 8,
-//     marginTop: 10,
-//     marginBottom: 20,
-//   },
-//   registerButtonText: {
-//     fontSize: 16,
-//   },
-//   loginContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   loginText: {
-//     color: COLORS.gray,
-//     fontSize: 14,
-//   },
-//   loginLink: {
-//     color: COLORS.primary,
-//     fontSize: 14,
-//   },
-// });
-
-// export default RegisterScreen;

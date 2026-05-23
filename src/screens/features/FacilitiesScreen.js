@@ -1,180 +1,224 @@
-import React from 'react';
-import { 
-  View, 
-  FlatList, 
-  StyleSheet, 
-  Dimensions, 
-  TouchableOpacity, 
-  Linking 
-} from 'react-native';
-import { Text, Card, Button, Avatar, IconButton } from 'react-native-paper';
+// src/screens/features/FacilitiesScreen.js
+import React, { useState, useEffect } from 'react';
+import { View, FlatList, StyleSheet, Dimensions, Linking, Text,TouchableOpacity } from 'react-native';
+import { Card, Button, Avatar, IconButton } from 'react-native-paper';
+import { storageService } from '../../utils/storage';
+import { CONTENT_KEYS, getDefaults } from '../../constants/contentKeys';
 import { COLORS } from '../../constants/theme';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
-const FACILITIES_DATA = [
-  { 
-    id: '1', 
-    name: 'Mosque', 
-    icon: 'mosque', 
-    desc: 'Spacious prayer hall for daily prayers.', 
-    timing: '24 Hours',
-    contact: 'Imam' 
-  },
-  { 
-    id: '2', 
-    name: 'Library', 
-    icon: 'library', 
-    desc: 'Extensive collection of Islamic & academic texts.', 
-    timing: '8 AM - 8 PM',
-    contact: 'Librarian' 
-  },
-  { 
-    id: '3', 
-    name: 'Computer Lab', 
-    icon: 'laptop', 
-    desc: 'Modern systems with high-speed internet.', 
-    timing: '9 AM - 4 PM',
-    contact: 'Lab Asst.' 
-  },
-  { 
-    id: '4', 
-    name: 'Sports Ground', 
-    icon: 'soccer', 
-    desc: 'Facilities for football, cricket and more.', 
-    timing: '4 PM - 6:30 PM',
-    contact: 'Coach' 
-  },
-  { 
-    id: '5', 
-    name: 'Dining Hall', 
-    icon: 'silverware-fork-knife', 
-    desc: 'Hygienic mess providing nutritious meals.', 
-    timing: 'Meal Times',
-    contact: 'Warden' 
-  },
-  { 
-    id: '6', 
-    name: 'Hostel', 
-    icon: 'bed', 
-    desc: 'Comfortable residential quarters for students.', 
-    timing: '24 Hours',
-    contact: 'Hostel Mgr' 
-  },
-];
-
 const FacilitiesScreen = () => {
+  const { t, language } = useLanguage();
+const [facilities, setFacilities] = useState(
+  getDefaults(language).FACILITIES
+);
 
-  const handleVirtualTour = () => {
-    // Replace with actual 360 link or video URL
-    Linking.openURL('https://your-college-tour.com');
-  };
+const [expandedId, setExpandedId] = useState(null);
 
-  const renderFacility = ({ item }) => (
-    <Card style={styles.gridItem}>
-      <Card.Content style={styles.cardContent}>
-        <Avatar.Icon 
-          size={45} 
-          icon={item.icon} 
-          backgroundColor={COLORS.primary + '15'} 
-          color={COLORS.primary} 
-        />
-        <Text style={styles.facilityName}>{item.name}</Text>
-        <Text style={styles.description} numberOfLines={2}>{item.desc}</Text>
-        
-        <View style={styles.footer}>
-          <Text style={styles.timing}>{item.timing}</Text>
-          <IconButton 
-            icon="information-outline" 
-            size={18} 
-            onPress={() => {}} 
-          />
-        </View>
-      </Card.Content>
-    </Card>
-  );
+// const FacilitiesScreen = () => {
+//   const { t, language } = useLanguage();
+// const [facilities, setFacilities] = useState(
+//   getDefaults(language).FACILITIES
+// );
 
-  return (
-    <View style={styles.container}>
-      {/* 360 Virtual Tour Button */}
-      <Button 
-        mode="contained" 
-        icon="rotate-3d-variant" 
-        onPress={handleVirtualTour}
-        style={styles.tourButton}
-        contentStyle={styles.tourButtonContent}
-      >
-        START VIRTUAL TOUR (360°)
-      </Button>
+useEffect(() => {
+  storageService
+    .getItem(CONTENT_KEYS.FACILITIES)
+    .then((saved) => {
+      if (saved) {
+        setFacilities(saved);
+      } else {
+        setFacilities(
+          getDefaults(language).FACILITIES ?? []
+        );
+      }
+    });
+}, [language]);
 
-      <FlatList
-        data={FACILITIES_DATA}
-        numColumns={2}
-        renderItem={renderFacility}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listPadding}
-      />
-    </View>
-  );
+return (
+  <View style={styles.container}>
+    {/* Optional Virtual Tour Button */}
+    {/* 
+    <Button
+      mode="contained"
+      icon="rotate-3d-variant"
+      onPress={() =>
+        Linking.openURL(
+          'https://your-college-tour.com'
+        )
+      }
+      style={styles.tourBtn}
+      contentStyle={{ height: 52 }}
+    >
+      {t('facilities.virtualTourBtn')}
+    </Button>
+    */}
+
+    <FlatList
+      data={facilities}
+      numColumns={2}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.list}
+      showsVerticalScrollIndicator={false}
+      renderItem={({ item }) => {
+        const expanded = expandedId === item.id;
+
+        return (
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() =>
+              setExpandedId(
+                expanded ? null : item.id
+              )
+            }
+          >
+            <Card
+              style={[
+                styles.gridItem,
+                expanded && styles.expandedCard,
+              ]}
+            >
+              <Card.Content
+                style={styles.cardContent}
+              >
+                <Avatar.Icon
+                  size={44}
+                  icon={
+                    item.icon ||
+                    'office-building'
+                  }
+                  backgroundColor={
+                    COLORS.primary + '15'
+                  }
+                  color={COLORS.primary}
+                />
+
+                <Text style={styles.name}>
+                  {item.name}
+                </Text>
+
+                <Text
+                  style={styles.desc}
+                  numberOfLines={
+                    expanded ? undefined : 2
+                  }
+                >
+                  {item.desc}
+                </Text>
+
+                <View style={styles.footer}>
+                  <Text style={styles.timing}>
+                    {item.timing}
+                  </Text>
+
+                  <IconButton
+                    icon={
+                      expanded
+                        ? 'chevron-up'
+                        : 'information-outline'
+                    }
+                    size={16}
+                    onPress={() =>
+                      setExpandedId(
+                        expanded
+                          ? null
+                          : item.id
+                      )
+                    }
+                  />
+                </View>
+              </Card.Content>
+            </Card>
+          </TouchableOpacity>
+        );
+      }}
+      ListEmptyComponent={
+        <Text style={styles.empty}>
+          {t('facilities.noFacilities')}
+        </Text>
+      }
+    />
+  </View>
+);
 };
 
+
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#F8F9FA' 
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
   },
-  tourButton: {
+
+  tourBtn: {
     margin: 15,
     backgroundColor: COLORS.primary,
     borderRadius: 12,
     elevation: 4,
   },
-  tourButtonContent: {
-    height: 55,
+
+  list: {
+    paddingHorizontal: 10,
+    paddingBottom: 20,
   },
-  listPadding: { 
-    paddingHorizontal: 10, 
-    paddingBottom: 20 
-  },
-  gridItem: { 
-    width: (width / 2) - 20, 
-    margin: 10, 
+
+  gridItem: {
+    width: (width / 2) - 20,
+    margin: 10,
     backgroundColor: '#FFF',
     borderRadius: 15,
     elevation: 2,
   },
+
+  expandedCard: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+
   cardContent: {
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 14,
   },
-  facilityName: { 
-    fontSize: 15, 
-    fontWeight: 'bold', 
+
+  name: {
+    fontSize: 14,
+    fontWeight: 'bold',
     marginTop: 10,
-    color: '#333'
+    color: '#333',
+    textAlign: 'center',
   },
-  description: { 
-    fontSize: 11, 
-    color: '#777', 
-    textAlign: 'center', 
-    marginTop: 5,
-    lineHeight: 16
+
+  desc: {
+    fontSize: 11,
+    color: '#777',
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 16,
   },
+
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    marginTop: 10,
+    marginTop: 8,
     borderTopWidth: 0.5,
     borderColor: '#EEE',
-    paddingTop: 5
+    paddingTop: 4,
   },
+
   timing: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: COLORS.primary
-  }
+    color: COLORS.primary,
+  },
+
+  empty: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 60,
+  },
 });
 
 export default FacilitiesScreen;
