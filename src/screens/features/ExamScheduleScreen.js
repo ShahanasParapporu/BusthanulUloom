@@ -1,14 +1,12 @@
 // // src/screens/features/ExamScheduleScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { Card, Text, Badge, IconButton } from 'react-native-paper';
+import { View, FlatList, StyleSheet , Platform, Linking } from 'react-native';
+import { Card, Text, Badge, IconButton, ActivityIndicator, Snackbar } from 'react-native-paper';
 import { storageService } from '../../utils/storage';
 import { CONTENT_KEYS, getDefaults } from '../../constants/contentKeys';
 import { COLORS } from '../../constants/theme';
 import { useLanguage } from '../../i18n/LanguageContext';
-import { ActivityIndicator } from 'react-native-paper';
 import RNFS from 'react-native-fs';
-import { Platform, Linking } from 'react-native';   // Linking may already be there via react-native
 import Share from 'react-native-share';
 
 const STATUS_COLORS = {
@@ -56,12 +54,19 @@ const buildDummyHtml = (item) => `
 
 const ExamScheduleScreen = () => {
   const { t, language } = useLanguage();
-  const [exams, setExams] = useState(() => getDefaults(language).EXAMS ?? []);
+  const [exams, setExams]           = useState(() => getDefaults(language).EXAMS ?? []);
   const [downloading, setDownloading] = useState({});
+  const [snack, setSnack]           = useState({ visible: false, message: '' });
+
+  const showSnack = (message) => setSnack({ visible: true, message });
+  const hideSnack = ()        => setSnack((s) => ({ ...s, visible: false }));
 
   useEffect(() => {
-    storageService.getItem(CONTENT_KEYS.EXAMS).then((v) => { if (v) setExams(v); });
-  }, []);
+    storageService.getItem(CONTENT_KEYS.EXAMS).then((saved) => {
+      if (saved) setExams(saved);
+      else       setExams(getDefaults(language).EXAMS ?? []);
+    });
+  }, [language]);
 
   const handleDownload = async (item) => {
     setDownloading((prev) => ({ ...prev, [item.id]: true }));
@@ -73,14 +78,21 @@ const ExamScheduleScreen = () => {
         : RNFS.DocumentDirectoryPath;
       const path = `${dir}/${filename}`;
 
+      showSnack('⏳ Preparing your exam schedule…');
+
       await RNFS.writeFile(path, buildDummyHtml(item), 'utf8');
 
       const exists = await RNFS.exists(path);
-      if (!exists) return;
+      if (!exists) { showSnack('❌ Download failed. Please try again.'); return; }
 
       if (Platform.OS === 'android') {
+        showSnack('✅ Saved! Opening…');
         setTimeout(async () => {
-          try { await Linking.openURL(`file://${path}`); } catch { /* saved but couldn't open */ }
+          try {
+            await Linking.openURL(`file://${path}`);
+          } catch {
+            showSnack(`✅ Saved to Downloads: ${filename}`);
+          }
         }, 500);
       } else {
         await Share.open({
@@ -88,10 +100,12 @@ const ExamScheduleScreen = () => {
           type:  'text/html',
           title: 'Save or Share Exam Schedule',
         });
+        showSnack('✅ Ready — save or share from the sheet!');
       }
     } catch (err) {
       if (err?.message !== 'User did not share') {
         console.error('Download error:', err);
+        showSnack('❌ Download failed. Please try again.');
       }
     } finally {
       setDownloading((prev) => ({ ...prev, [item.id]: false }));
@@ -127,6 +141,16 @@ const ExamScheduleScreen = () => {
         ListEmptyComponent={<Text style={styles.empty}>{t('exams.noExams')}</Text>}
         contentContainerStyle={{ padding: 15 }}
       />
+
+      <Snackbar
+        visible={snack.visible}
+        onDismiss={hideSnack}
+        duration={3000}
+        style={styles.snackbar}
+        action={{ label: '✕', onPress: hideSnack }}
+      >
+        {snack.message}
+      </Snackbar>
     </View>
   );
 };

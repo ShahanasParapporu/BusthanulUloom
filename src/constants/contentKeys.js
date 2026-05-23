@@ -28,10 +28,38 @@ export const CONTENT_KEYS = {
     return {
       ...d,
       // Normalise — screen uses UPPERCASE keys, translations use lowercase
-      EXAMS:        d.EXAMS        ?? d.exams        ?? [],
-      HOLIDAYS:     d.HOLIDAYS     ?? d.holidays      ?? [],
-      DAY_SCHEDULE: d.DAY_SCHEDULE ?? d.daySchedule   ?? [],
-      FACILITIES:   d.FACILITIES   ?? d.facilities    ?? [],
+      COLLEGE_STATS:   d.COLLEGE_STATS   ?? d.collegeStats   ?? {
+        established: '',
+        affiliation: '',
+        students:    '',
+        location:    '',
+      },
+  
+      TEACHERS:        d.TEACHERS        ?? d.teachers        ?? [],
+  
+      DARS_OVERVIEW:   d.DARS_OVERVIEW   ?? d.darsOverview    ?? '',
+  
+      DARS_CURRICULUM: d.DARS_CURRICULUM ?? d.darsCurriculum  ?? [],
+  
+      EXAMS:           d.EXAMS           ?? d.exams           ?? [],
+  
+      BUSA:            d.BUSA            ?? d.busa            ?? {
+        president:    '',
+        secretary:    '',
+        achievements: [],
+      },
+  
+      HOLIDAYS:        d.HOLIDAYS        ?? d.holidays        ?? [],
+  
+      DAY_SCHEDULE:    d.DAY_SCHEDULE    ?? d.daySchedule     ?? [],
+  
+      FACILITIES:      d.FACILITIES      ?? d.facilities      ?? [],
+  
+      GALLERY_PHOTOS:  d.GALLERY_PHOTOS  ?? d.galleryPhotos   ?? [],
+  
+      GALLERY_VIDEOS:  d.GALLERY_VIDEOS  ?? d.galleryVideos   ?? [],
+  
+      NOTIFICATIONS:   d.NOTIFICATIONS   ?? d.notifications   ?? [],
     };
   };
 

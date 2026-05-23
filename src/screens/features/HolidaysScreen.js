@@ -3,19 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { List, Avatar } from 'react-native-paper';
 import { storageService } from '../../utils/storage';
-import { CONTENT_KEYS, DEFAULTS } from '../../constants/contentKeys';
+import { CONTENT_KEYS, getDefaults  } from '../../constants/contentKeys';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 
 const TYPE_COLORS = { Religious: '#2E7D32', National: '#1565C0', Academic: '#E65100' };
 
 const HolidaysScreen = () => {
-  const { t } = useLanguage();
-  const [holidays, setHolidays] = useState(DEFAULTS.HOLIDAYS);
+  const { t, language } = useLanguage();  
+  const [holidays, setHolidays] = useState(() => getDefaults(language).HOLIDAYS); // ← lazy init
 
   useEffect(() => {
-    storageService.getItem(CONTENT_KEYS.HOLIDAYS).then((v) => { if (v) setHolidays(v); });
-  }, []);
+    storageService.getItem(CONTENT_KEYS.HOLIDAYS).then((saved) => {
+      if (saved) setHolidays(saved);
+      else       setHolidays(getDefaults(language).HOLIDAYS);                      // ← language-aware fallback
+    });
+  }, [language]);
 
   return (
     <FlatList

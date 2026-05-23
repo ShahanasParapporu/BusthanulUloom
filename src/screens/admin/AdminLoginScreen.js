@@ -13,8 +13,8 @@ import { storageService, STORAGE_KEYS } from '../../utils/storage';
 import { USER_ROLES } from '../../constants/theme';
 
 const ADMIN_CREDENTIALS = {
-  username: 'admin@busthanululoom.edu',
-  password: 'BU@Admin2025',
+  username: 'admin@bu.edu',
+  password: 'BU@Admin',
 };
 
 const THEME = {

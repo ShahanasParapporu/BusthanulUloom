@@ -7,7 +7,7 @@ import { TextInput, Button, Card, Snackbar, Divider, Switch } from 'react-native
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { storageService } from '../../utils/storage';
-import { CONTENT_KEYS, DEFAULTS } from '../../constants/contentKeys';
+import { CONTENT_KEYS, getDefaults } from '../../constants/contentKeys';
 import useLogout from '../../hooks/useLogout';
 
 const THEME = {
@@ -46,6 +46,7 @@ const emptyCurric   = () => ({ id: null, level: '', subjects: '' });
 
 // ─────────────────────────────────────────────────────────────────────────────
 const AdminPanelScreen = () => {
+  const DEFAULTS = getDefaults('en');
   const performLogout = useLogout();
 
   const [activeTab, setActiveTab]         = useState('college');

@@ -56,7 +56,7 @@ const StudentPortalScreen = () => {
         {/* Welcome strip */}
         <View style={styles.welcomeStrip}>
           <View>
-            <Text style={styles.welcomeText}>t('studentPortal.greeting'),</Text>
+            <Text style={styles.welcomeText}>{t('studentPortal.greeting')}</Text>
             <Text style={styles.studentName}>{user?.name || 'Student'}</Text>
           </View>
           <Avatar.Image size={50} source={{ uri: 'https://i.pravatar.cc/150' }} />

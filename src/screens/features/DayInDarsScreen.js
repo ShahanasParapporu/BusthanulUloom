@@ -3,18 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
 import { Text, Card, Avatar, IconButton } from 'react-native-paper';
 import { storageService } from '../../utils/storage';
-import { CONTENT_KEYS, DEFAULTS } from '../../constants/contentKeys';
+import { CONTENT_KEYS, getDefaults } from '../../constants/contentKeys';
 import { COLORS } from '../../constants/theme';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 const DayInDarsScreen = () => {
-  const [schedule, setSchedule]   = useState(DEFAULTS.DAY_SCHEDULE);
+  //const [schedule, setSchedule] = useState(() => getDefaults('en').DAY_SCHEDULE);
   const [expanded, setExpanded]   = useState(null);
-  const { t } = useLanguage();
+  const { t , language } = useLanguage();
+  const [schedule, setSchedule] = useState(
+    () => getDefaults(language).DAY_SCHEDULE
+  );
+
 
   useEffect(() => {
-    storageService.getItem(CONTENT_KEYS.DAY_SCHEDULE).then((v) => { if (v) setSchedule(v); });
-  }, []);
+    storageService.getItem(CONTENT_KEYS.DAY_SCHEDULE).then((saved) => {
+      if (saved) setSchedule(saved);
+      else       setSchedule(getDefaults(language).DAY_SCHEDULE ?? []);
+    });
+  }, [language]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
