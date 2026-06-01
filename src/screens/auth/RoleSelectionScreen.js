@@ -3,7 +3,7 @@
 // No navigation.replace('Main') needed anywhere.
 
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, StatusBar } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, StatusBar , ScrollView } from 'react-native';
 import { Button, Card, Avatar } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../redux/slices/authSlice';
@@ -56,8 +56,8 @@ const RoleSelectionScreen = ({ navigation }) => {
         <Text style={styles.subtitle}>{t('roleSelection.subtitle')}</Text>
       </View>
 
-      <View style={styles.rolesContainer}>
-        {roles.map((role) => {
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.rolesContainer} showsVerticalScrollIndicator={false}>
+      {roles.map((role) => {
           const isSelected = selectedRole === role.id;
           return (
             <TouchableOpacity key={role.id} onPress={() => setSelectedRole(role.id)} activeOpacity={0.9}>
@@ -81,7 +81,8 @@ const RoleSelectionScreen = ({ navigation }) => {
             </TouchableOpacity>
           );
         })}
-      </View>
+   </ScrollView>
+
 
       <Button
         mode="contained"
@@ -106,7 +107,9 @@ const styles = StyleSheet.create({
   header: { marginTop: 80, marginBottom: 35 },
   title: { fontSize: 32, fontWeight: '800', color: '#1A1A1A', letterSpacing: -0.5 },
   subtitle: { fontSize: 16, color: '#757575', marginTop: 10, lineHeight: 22 },
-  rolesContainer: { flex: 1 },
+  //rolesContainer: { flex: 1 },
+  scrollView: { flex: 1 },           // takes remaining space between header and button
+  rolesContainer: { paddingBottom: 8 }, // contentContainerStyle — just inner padding
   roleCard: { marginBottom: 16, borderRadius: 20, backgroundColor: '#FFFFFF', elevation: 0, borderWidth: 1.5, borderColor: '#F0F0F0' },
   roleCardSelected: { borderWidth: 2, backgroundColor: '#FAFAFA', elevation: 4 },
   cardLayout: { flexDirection: 'row', alignItems: 'center', padding: 18 },

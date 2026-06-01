@@ -475,8 +475,27 @@ export const translations = {
       ],
 
       galleryVideos: [
-        { id: '1', title: 'Annual Day 2023', duration: '05:20', thumb: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=500', url: '' },
-        { id: '2', title: 'Campus Tour', duration: '03:45', thumb: 'https://images.unsplash.com/photo-1524178232363-1fb28f74b0cd?q=80&w=500', url: '' },
+        {
+          id: '1',
+          title: 'Annual Day 2023',
+          duration: '00:10',
+          thumb: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=500',
+          url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        },
+        {
+          id: '2',
+          title: 'Campus Tour',
+          duration: '02:05',
+          thumb: 'https://images.unsplash.com/photo-1524178232363-1fb28f74b0cd?q=80&w=500',
+          url: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4',
+        },
+        {
+          id: '3',
+          title: 'Science Lab Demo',
+          duration: '00:05',
+          thumb: 'https://images.unsplash.com/photo-1532094349884-543559c8c6f0?q=80&w=500',
+          url: 'https://samplelib.com/lib/preview/mp4/sample-5s.mp4',
+        },
       ],
 
       notifications: [
