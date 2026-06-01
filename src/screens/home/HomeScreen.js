@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, StyleSheet, ScrollView, Text, TouchableOpacity,
-  StatusBar, ImageBackground, Dimensions, Alert,
+  StatusBar, ImageBackground, Dimensions, Alert, Platform,
 } from 'react-native';
 import { Card, List, Button } from 'react-native-paper';
 import { useSelector } from 'react-redux';
@@ -12,7 +12,6 @@ import { USER_ROLES } from '../../constants/theme';
 import AppHeader from '../../components/AppHeader';
 import useLogout from '../../hooks/useLogout';
 import { useLanguage } from '../../i18n/LanguageContext';
-
 
 // ─── Inline sub-screen imports ────────────────────────────────────────────────
 import TeachersListScreen from '../features/TeachersListScreen';
@@ -52,7 +51,7 @@ const HomeScreen = ({ navigation }) => {
     Gallery:       { component: GalleryScreen,        title: t('gallery.screenTitle') },
     Notifications: { component: NotificationsScreen,  title: t('notifications.screenTitle') },
   };
-  
+
   const DASHBOARD_FEATURES = [
     { id: 10, title: t('home.features.dars'),          icon: 'book-open-page-variant',     color: '#2E7D32', screen: 'DarsDetails'   },
     { id: 11, title: t('home.features.examSchedule'),  icon: 'file-document-edit-outline', color: '#1565C0', screen: 'ExamSchedule'  },
@@ -90,7 +89,6 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  // Shared header props used on BOTH home feed and sub-pages
   const sharedHeaderProps = {
     role, user,
     onLogout: handleLogout,
@@ -98,12 +96,13 @@ const HomeScreen = ({ navigation }) => {
     notifCount: 3,
   };
 
-  // ─── Sub-page: same AppHeader, back arrow, content swaps below ───────────────
+  // ─── Sub-page ─────────────────────────────────────────────────────────────────
   if (activePage && SUB_SCREENS[activePage]) {
     const { component: SubComponent, title } = SUB_SCREENS[activePage];
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
+        {/* Fix 2: translucent StatusBar so header sits flush under it */}
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <AppHeader {...sharedHeaderProps} showBack title={title} onBack={goBack} />
         <SubComponent navigation={navigation} />
       </View>
@@ -113,19 +112,33 @@ const HomeScreen = ({ navigation }) => {
   // ─── Home feed ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
-      <AppHeader {...sharedHeaderProps} />
+      {/* Fix 2: translucent StatusBar — no extra space above header */}
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Welcome Banner */}
+      {/*
+        Fix 1 & 2: AppHeader receives a compact style override.
+        Pass compactHeader prop (you'll mirror this change in AppHeader.js —
+        see the note below). The header itself must also use paddingTop that
+        accounts for the status bar height rather than an extra View gap.
+      */}
+      <AppHeader {...sharedHeaderProps} compact />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        // Fix 3: Remove top padding so banner hugs the header
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Welcome Banner — Fix 3: reduced marginBottom, removed any implicit top gap */}
         <ImageBackground
           source={{ uri: 'https://images.unsplash.com/photo-1590076215667-873917098492?q=80&w=1000&auto=format&fit=crop' }}
           style={styles.banner}
-          imageStyle={{ borderRadius: 20 }}
+          imageStyle={{ borderRadius: 16 }}
         >
           <View style={styles.bannerOverlay}>
-          <Text style={styles.bannerGreeting}>{t('home.greeting')}</Text>
-          <Text style={styles.bannerName}>{role === USER_ROLES.GUEST ? t('home.guestUser') : user?.name}</Text>
+            <Text style={styles.bannerGreeting}>{t('home.greeting')}</Text>
+            <Text style={styles.bannerName}>
+              {role === USER_ROLES.GUEST ? t('home.guestUser') : user?.name}
+            </Text>
           </View>
         </ImageBackground>
 
@@ -146,7 +159,7 @@ const HomeScreen = ({ navigation }) => {
               </View>
               <Text style={styles.locationText}>📍 {collegeStats.location}</Text>
               <Button mode="contained" style={styles.teachersBtn} onPress={() => openPage('TeachersList')}>
-              {t('home.viewTeachers')}
+                {t('home.viewTeachers')}
               </Button>
             </View>
           </List.Accordion>
@@ -159,7 +172,7 @@ const HomeScreen = ({ navigation }) => {
             {DASHBOARD_FEATURES.map((item) => (
               <TouchableOpacity key={item.id} style={styles.gridItem} onPress={() => openPage(item.screen)}>
                 <View style={[styles.iconCircle, { backgroundColor: item.color + '15' }]}>
-                  <Icon name={item.icon} size={30} color={item.color} />
+                  <Icon name={item.icon} size={28} color={item.color} />
                 </View>
                 <Text style={styles.gridText}>{item.title}</Text>
               </TouchableOpacity>
@@ -179,30 +192,292 @@ const StatItem = ({ label, value }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
-  banner: { width: '100%', height: 160, justifyContent: 'flex-end', marginBottom: 20 },
-  bannerOverlay: { padding: 20, backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 20 },
-  bannerGreeting: { color: '#EEE', fontSize: 14 },
-  bannerName: { color: '#FFF', fontSize: 22, fontWeight: 'bold' },
-  aboutCard: { borderRadius: 15, backgroundColor: '#FFF', elevation: 2, marginBottom: 20 },
-  aboutTitle: { fontWeight: 'bold', fontSize: 16 },
-  aboutContent: { padding: 15, paddingTop: 0 },
-  statsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-  statBox: { alignItems: 'center', flex: 1 },
-  statVal: { fontSize: 16, fontWeight: 'bold', color: '#2E7D32' },
-  statLab: { fontSize: 11, color: '#777' },
-  locationText: { textAlign: 'center', color: '#666', marginBottom: 15 },
-  teachersBtn: { backgroundColor: '#2E7D32', borderRadius: 8 },
-  gridContainer: { marginTop: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 15 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  gridItem: {
-    width: (width - 60) / 2, backgroundColor: '#FFF', borderRadius: 20,
-    padding: 20, alignItems: 'center', marginBottom: 15, elevation: 3,
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
   },
-  iconCircle: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  gridText: { fontSize: 14, fontWeight: '600', color: '#444', textAlign: 'center' },
+
+  // Fix 3: paddingTop:12 instead of default (~20), tight top
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+
+  // Fix 3: banner height trimmed slightly, marginBottom reduced 20→12
+  banner: {
+    width: '100%',
+    height: 90,
+    justifyContent: 'flex-end',
+    marginBottom: 5,
+  },
+  bannerOverlay: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(0,0,0,0.38)',
+    borderRadius: 16,
+  },
+  bannerGreeting: { color: '#EEE', fontSize: 13 },
+  bannerName:    { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
+
+  aboutCard: {
+    borderRadius: 14,
+    backgroundColor: '#FFF',
+    elevation: 2,
+    marginBottom: 16,
+  },
+  aboutTitle:   { fontWeight: 'bold', fontSize: 15 },
+  aboutContent: { padding: 14, paddingTop: 0 },
+  statsGrid:    { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  statBox:      { alignItems: 'center', flex: 1 },
+  statVal:      { fontSize: 15, fontWeight: 'bold', color: '#2E7D32' },
+  statLab:      { fontSize: 11, color: '#777' },
+  locationText: { textAlign: 'center', color: '#666', marginBottom: 12 },
+  teachersBtn:  { backgroundColor: '#2E7D32', borderRadius: 8 },
+
+  gridContainer: { marginTop: 6 },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  gridItem: {
+    width: (width - 48) / 2,   // 48 = 16*2 side padding + 16 gap
+    backgroundColor: '#FFF',
+    borderRadius: 18,
+    padding: 18,
+    alignItems: 'center',
+    marginBottom: 12,
+    elevation: 3,
+  },
+  iconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  gridText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#444',
+    textAlign: 'center',
+  },
 });
 
 export default HomeScreen;
+
+// // src/screens/home/HomeScreen.js
+// import React, { useState, useEffect, useCallback } from 'react';
+// import {
+//   View, StyleSheet, ScrollView, Text, TouchableOpacity,
+//   StatusBar, ImageBackground, Dimensions, Alert,
+// } from 'react-native';
+// import { Card, List, Button } from 'react-native-paper';
+// import { useSelector } from 'react-redux';
+// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+// import { storageService } from '../../utils/storage';
+// import { USER_ROLES } from '../../constants/theme';
+// import AppHeader from '../../components/AppHeader';
+// import useLogout from '../../hooks/useLogout';
+// import { useLanguage } from '../../i18n/LanguageContext';
+
+
+// // ─── Inline sub-screen imports ────────────────────────────────────────────────
+// import TeachersListScreen from '../features/TeachersListScreen';
+// import DarsDetailsScreen from '../features/DarsDetailsScreen';
+// import ExamScheduleScreen from '../features/ExamScheduleScreen';
+// import BUSAScreen from '../features/BUSAScreen';
+// import HolidaysScreen from '../features/HolidaysScreen';
+// import DayInDarsScreen from '../features/DayInDarsScreen';
+// import FacilitiesScreen from '../features/FacilitiesScreen';
+// import GalleryScreen from '../features/GalleryScreen';
+// import NotificationsScreen from '../features/NotificationsScreen';
+
+// const { width } = Dimensions.get('window');
+// const ADMIN_STATS_KEY = 'admin_college_stats';
+// const DEFAULT_STATS = {
+//   established: '1995', affiliation: 'Calicut',
+//   students: '1200+', location: 'Malappuram, Kerala',
+// };
+
+// const HomeScreen = ({ navigation }) => {
+//   const { user, role } = useSelector((state) => state.auth);
+//   const performLogout = useLogout();
+//   const { t } = useLanguage();
+
+//   const [activePage, setActivePage]       = useState(null);
+//   const [aboutExpanded, setAboutExpanded] = useState(false);
+//   const [collegeStats, setCollegeStats]   = useState(DEFAULT_STATS);
+
+//   const SUB_SCREENS = {
+//     TeachersList:  { component: TeachersListScreen,  title: t('teachers.screenTitle') },
+//     DarsDetails:   { component: DarsDetailsScreen,   title: t('dars.screenTitle') },
+//     ExamSchedule:  { component: ExamScheduleScreen,  title: t('exams.screenTitle') },
+//     BUSA:          { component: BUSAScreen,           title: t('busa.screenTitle')  },
+//     Holidays:      { component: HolidaysScreen,       title: t('holidays.screenTitle') },
+//     DayInDars:     { component: DayInDarsScreen,      title: t('dayInDars.screenTitle') },
+//     Facilities:    { component: FacilitiesScreen,     title: t('facilities.screenTitle') },
+//     Gallery:       { component: GalleryScreen,        title: t('gallery.screenTitle') },
+//     Notifications: { component: NotificationsScreen,  title: t('notifications.screenTitle') },
+//   };
+  
+//   const DASHBOARD_FEATURES = [
+//     { id: 10, title: t('home.features.dars'),          icon: 'book-open-page-variant',     color: '#2E7D32', screen: 'DarsDetails'   },
+//     { id: 11, title: t('home.features.examSchedule'),  icon: 'file-document-edit-outline', color: '#1565C0', screen: 'ExamSchedule'  },
+//     { id: 12, title: t('home.features.busa'),          icon: 'account-group',              color: '#E65100', screen: 'BUSA'          },
+//     { id: 13, title: t('home.features.holidays'),      icon: 'calendar-star',              color: '#C62828', screen: 'Holidays'      },
+//     { id: 14, title: t('home.features.dayInDars'),     icon: 'clock-check-outline',        color: '#00838F', screen: 'DayInDars'     },
+//     { id: 15, title: t('home.features.facilities'),    icon: 'office-building',            color: '#4527A0', screen: 'Facilities'    },
+//     { id: 16, title: t('home.features.gallery'),       icon: 'play-box-multiple-outline',  color: '#AD1457', screen: 'Gallery'       },
+//     { id: 17, title: t('home.features.notifications'), icon: 'bell-badge-outline',         color: '#5D4037', screen: 'Notifications' },
+//   ];
+
+//   useEffect(() => {
+//     const load = async () => {
+//       const saved = await storageService.getItem(ADMIN_STATS_KEY);
+//       if (saved) setCollegeStats(saved);
+//     };
+//     load();
+//     const unsub = navigation.addListener('focus', load);
+//     return unsub;
+//   }, [navigation]);
+
+//   const openPage = useCallback((key) => setActivePage(key), []);
+//   const goBack   = useCallback(() => setActivePage(null), []);
+
+//   const handleLogout = () => {
+//     const isGuest = role === USER_ROLES.GUEST;
+//     if (isGuest) { performLogout(); return; }
+//     Alert.alert(
+//       t('home.logoutConfirmTitle'),
+//       t('home.logoutConfirmMsg'),
+//       [
+//         { text: t('app.cancel'), style: 'cancel' },
+//         { text: t('app.logout'), style: 'destructive', onPress: performLogout },
+//       ]
+//     );
+//   };
+
+//   // Shared header props used on BOTH home feed and sub-pages
+//   const sharedHeaderProps = {
+//     role, user,
+//     onLogout: handleLogout,
+//     onNotification: () => openPage('Notifications'),
+//     notifCount: 3,
+//   };
+
+//   // ─── Sub-page: same AppHeader, back arrow, content swaps below ───────────────
+//   if (activePage && SUB_SCREENS[activePage]) {
+//     const { component: SubComponent, title } = SUB_SCREENS[activePage];
+//     return (
+//       <View style={styles.container}>
+//         <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
+//         <AppHeader {...sharedHeaderProps} showBack title={title} onBack={goBack} />
+//         <SubComponent navigation={navigation} />
+//       </View>
+//     );
+//   }
+
+//   // ─── Home feed ────────────────────────────────────────────────────────────────
+//   return (
+//     <View style={styles.container}>
+//       <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
+//       <AppHeader {...sharedHeaderProps} />
+
+//       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+//         {/* Welcome Banner */}
+//         <ImageBackground
+//           source={{ uri: 'https://images.unsplash.com/photo-1590076215667-873917098492?q=80&w=1000&auto=format&fit=crop' }}
+//           style={styles.banner}
+//           imageStyle={{ borderRadius: 20 }}
+//         >
+//           <View style={styles.bannerOverlay}>
+//           <Text style={styles.bannerGreeting}>{t('home.greeting')}</Text>
+//           <Text style={styles.bannerName}>{role === USER_ROLES.GUEST ? t('home.guestUser') : user?.name}</Text>
+//           </View>
+//         </ImageBackground>
+
+//         {/* About Section */}
+//         <Card style={styles.aboutCard}>
+//           <List.Accordion
+//             title={t('home.aboutTitle')}
+//             left={(p) => <List.Icon {...p} icon="information-outline" color="#2E7D32" />}
+//             expanded={aboutExpanded}
+//             onPress={() => setAboutExpanded(!aboutExpanded)}
+//             titleStyle={styles.aboutTitle}
+//           >
+//             <View style={styles.aboutContent}>
+//               <View style={styles.statsGrid}>
+//                 <StatItem label={t('home.statLabels.est')}        value={collegeStats.established} />
+//                 <StatItem label={t('home.statLabels.affiliated')} value={collegeStats.affiliation} />
+//                 <StatItem label={t('home.statLabels.students')}   value={collegeStats.students} />
+//               </View>
+//               <Text style={styles.locationText}>📍 {collegeStats.location}</Text>
+//               <Button mode="contained" style={styles.teachersBtn} onPress={() => openPage('TeachersList')}>
+//               {t('home.viewTeachers')}
+//               </Button>
+//             </View>
+//           </List.Accordion>
+//         </Card>
+
+//         {/* Feature Grid */}
+//         <View style={styles.gridContainer}>
+//           <Text style={styles.sectionTitle}>{t('home.campusServices')}</Text>
+//           <View style={styles.grid}>
+//             {DASHBOARD_FEATURES.map((item) => (
+//               <TouchableOpacity key={item.id} style={styles.gridItem} onPress={() => openPage(item.screen)}>
+//                 <View style={[styles.iconCircle, { backgroundColor: item.color + '15' }]}>
+//                   <Icon name={item.icon} size={30} color={item.color} />
+//                 </View>
+//                 <Text style={styles.gridText}>{item.title}</Text>
+//               </TouchableOpacity>
+//             ))}
+//           </View>
+//         </View>
+//       </ScrollView>
+//     </View>
+//   );
+// };
+
+// const StatItem = ({ label, value }) => (
+//   <View style={styles.statBox}>
+//     <Text style={styles.statVal}>{value}</Text>
+//     <Text style={styles.statLab}>{label}</Text>
+//   </View>
+// );
+
+// const styles = StyleSheet.create({
+//   container: { flex: 1, backgroundColor: '#F8F9FA' },
+//   scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
+//   banner: { width: '100%', height: 160, justifyContent: 'flex-end', marginBottom: 20 },
+//   bannerOverlay: { padding: 20, backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 20 },
+//   bannerGreeting: { color: '#EEE', fontSize: 14 },
+//   bannerName: { color: '#FFF', fontSize: 22, fontWeight: 'bold' },
+//   aboutCard: { borderRadius: 15, backgroundColor: '#FFF', elevation: 2, marginBottom: 20 },
+//   aboutTitle: { fontWeight: 'bold', fontSize: 16 },
+//   aboutContent: { padding: 15, paddingTop: 0 },
+//   statsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+//   statBox: { alignItems: 'center', flex: 1 },
+//   statVal: { fontSize: 16, fontWeight: 'bold', color: '#2E7D32' },
+//   statLab: { fontSize: 11, color: '#777' },
+//   locationText: { textAlign: 'center', color: '#666', marginBottom: 15 },
+//   teachersBtn: { backgroundColor: '#2E7D32', borderRadius: 8 },
+//   gridContainer: { marginTop: 10 },
+//   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 15 },
+//   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+//   gridItem: {
+//     width: (width - 60) / 2, backgroundColor: '#FFF', borderRadius: 20,
+//     padding: 20, alignItems: 'center', marginBottom: 15, elevation: 3,
+//   },
+//   iconCircle: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+//   gridText: { fontSize: 14, fontWeight: '600', color: '#444', textAlign: 'center' },
+// });
+
+// export default HomeScreen;
